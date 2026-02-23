@@ -24,7 +24,22 @@ export const CheckboxGroup = ({ label, options, values, onChange }) => (
   </div>
 );
 
-export const InputGroup = ({ label, type = "text", value, onChange, placeholder, suffix, options, name, className = "" }) => (
+// NUEVO: Componente dedicado para TextAreas, permite cambiar el tamaño con "rows"
+export const TextAreaGroup = ({ label, name, value, onChange, placeholder, rows = 3, className = "" }) => (
+  <div className={`flex flex-col ${className}`}>
+    <label className="text-xs font-semibold text-gray-500 dark:text-slate-400 mb-1.5 uppercase">{label}</label>
+    <textarea
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        rows={rows}
+        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block p-2.5 resize-none placeholder-slate-400 dark:placeholder-slate-500 transition-all outline-none"
+    />
+  </div>
+);
+
+export const InputGroup = ({ label, type = "text", value, onChange, placeholder, suffix, options, name, className = "", step }) => (
   <div className={`flex flex-col ${className}`}>
     <label className="text-xs font-semibold text-gray-500 dark:text-slate-400 mb-1.5 uppercase">{label}</label>
     <div className="relative">
@@ -33,7 +48,7 @@ export const InputGroup = ({ label, type = "text", value, onChange, placeholder,
           name={name}
           value={value}
           onChange={onChange}
-          className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 text-gray-800 dark:text-white text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block p-2.5 appearance-none"
+          className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block p-2.5 appearance-none outline-none transition-all"
         >
           <option value="">Seleccione...</option>
           {options.map((opt) => (
@@ -41,13 +56,14 @@ export const InputGroup = ({ label, type = "text", value, onChange, placeholder,
           ))}
         </select>
       ) : type === 'textarea' ? (
+        /* Lo mantenemos como fallback por si alguna pestaña antigua aún lo usa así */
         <textarea
             name={name}
             value={value}
             onChange={onChange}
             placeholder={placeholder}
             rows={3}
-            className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 text-gray-800 dark:text-white text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block p-2.5 resize-none"
+            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block p-2.5 resize-none outline-none transition-all"
         />
       ) : (
         <input
@@ -55,12 +71,15 @@ export const InputGroup = ({ label, type = "text", value, onChange, placeholder,
           name={name}
           value={value}
           onChange={onChange}
+          step={step}
           placeholder={placeholder}
-          className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 text-gray-800 dark:text-white text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block p-2.5"
+          className={`w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block p-2.5 outline-none transition-all placeholder-slate-400 dark:placeholder-slate-500
+            ${(type === 'date' || type === 'time') ? 'dark:[&::-webkit-calendar-picker-indicator]:filter dark:[&::-webkit-calendar-picker-indicator]:invert' : ''}
+          `}
         />
       )}
       {suffix && (
-        <span className="absolute right-3 top-2.5 text-gray-400 text-sm pointer-events-none">
+        <span className="absolute right-3 top-2.5 text-slate-400 text-sm pointer-events-none font-medium">
           {suffix}
         </span>
       )}

@@ -15,16 +15,30 @@ const PerfilPaciente = ({ patientData, onBack }) => {
   
   // ESTADO GLOBAL: PACIENTE
   const [patient, setPatient] = useState({
-    nombre_completo: '', cedula: '', edad: '', sexo: 'mujer', 
+    nombre_completo: '', cedula: '', edad: '', sexo: 'mujer', email: '', telefono: '', tags: [],
     ocupacion: '', tipoConsulta: 'online', motivo: '', expectativas: '', objetivosClinicos: '',
     nivel_actividad: 'Sedentario', horas_sueno: '', calidad_sueno: 'Regular', fumador: false, alcohol: '', 
-    patologias: '', sintomasGI: [], medicacion: '', suplementacion: '',
-    peso: '70', altura: '170', cintura: '', cadera: '',
+    patologias: '', sintomasGI: [], medicacion: '', suplementacion: '', nivel_estres: '5', 
+    peso: '70', altura: '170', somatotipo: 'Mesomorfo', cintura: '', cadera: '',
     masaGrasa: '', masaMuscular: '', grasaVisceral: '', edadMetabolica: '',
-    brazoR: '', brazoC: '', pantorrilla: '',
+    brazoR: '', brazoC: '', pantorrilla: '', 
+    // Pliegues ISAK (NUEVO)
+    pliegue_tricipital: '', pliegue_bicipital: '', pliegue_subescapular: '', 
+    pliegue_supraespinal: '', pliegue_abdominal: '', pliegue_muslo: '', pliegue_pantorrilla: '',
     presionArterial: '', glucemia: '', hba1c: '', colesterol: '', trigliceridos: '',
     pesoObjetivo: '65', formulaTMB: 'mifflin', factorActividad: '1.2', ajusteCalorico: '-300',
     macroProt: '25', macroGrasa: '30', macroCarbo: '45',
+    // --- NUEVOS CAMPOS DE PLANIFICACIÓN ---
+    distribucion_comidas: {
+        desayuno: 25, colacion1: 10, almuerzo: 35, colacion2: 10, cena: 20
+    },
+    suplementos_prescritos: [
+        { id: 1, nombre: 'Creatina Monohidratada', dosis: '5g', momento: 'Post-entrenamiento' }
+    ],
+    // --- NUEVOS CAMPOS DE ENTRENAMIENTO ---
+    cardio_tipo: '', cardio_duracion: '', cardio_frecuencia: '', 
+    pasos_diarios: '10000', notas_entrenamiento: '',
+
     recordatorio_24h: { 
         desayuno: { hora: '08:00', detalle: '' }, colacion1: { hora: '11:00', detalle: '' },
         almuerzo: { hora: '13:00', detalle: '' }, colacion2: { hora: '17:00', detalle: '' },
@@ -93,18 +107,27 @@ const PerfilPaciente = ({ patientData, onBack }) => {
 
       {/* RENDERIZADO DINÁMICO DE PESTAÑAS */}
       <div className="flex-1 overflow-y-auto pb-10 pr-2 custom-scrollbar">
-         {activeTab === 'general' && <GeneralTab patient={patient} onChange={handleChange} />}
+         {activeTab === 'general' && (
+            <GeneralTab patient={patient} setPatient={setPatient} onChange={handleChange} />
+        )}
          {activeTab === 'history' && <HistoryTab patient={patient} setPatient={setPatient} onChange={handleChange} />}
          {activeTab === 'measurements' && (
-             <MeasurementsTab 
-                patient={patient} 
-                onChange={handleChange} 
-                evaluaciones={evaluaciones} 
-                setEvaluaciones={setEvaluaciones} 
-             />
+            <MeasurementsTab 
+              patient={patient} 
+              onChange={handleChange} 
+              evaluaciones={evaluaciones} 
+              setEvaluaciones={setEvaluaciones} 
+            />
          )}
-         {activeTab === 'planning' && <PlanningTab patient={patient} onChange={handleChange} />}
-         {activeTab === 'training' && <TrainingTab rutina={rutina} setRutina={setRutina} />}
+         {activeTab === 'planning' && <PlanningTab patient={patient} setPatient={setPatient} onChange={handleChange} />}
+         {activeTab === 'training' && (
+            <TrainingTab 
+              rutina={rutina} 
+              setRutina={setRutina} 
+              patient={patient} 
+              onChange={handleChange} 
+            />
+        )}
       </div>
     </div>
   );

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Dumbbell, PlusCircle, Trash2, X } from 'lucide-react';
+import { Dumbbell, PlusCircle, Trash2, X, HeartPulse, MessageSquare, Activity } from 'lucide-react';
 import Card from '../ui/Card';
+import { InputGroup, TextAreaGroup } from '../ui/FormComponents'; // Asegúrate de exportar TextAreaGroup en FormComponents
 
-const TrainingTab = ({ rutina, setRutina }) => {
+const TrainingTab = ({ rutina, setRutina, patient, onChange }) => {
   const [activeDay, setActiveDay] = useState(0);
 
   // --- 1. LÓGICA DE EJERCICIOS ---
@@ -29,34 +30,27 @@ const TrainingTab = ({ rutina, setRutina }) => {
     setRutina(newRutina);
   };
 
-  // --- 2. LÓGICA DE DÍAS (NUEVO) ---
+  // --- 2. LÓGICA DE DÍAS ---
   const addDay = () => {
     setRutina([...rutina, { id: Date.now(), nombre: `Día ${rutina.length + 1}`, ejercicios: [] }]);
     setActiveDay(rutina.length); 
   };
 
-  // Cambiar el nombre del día
   const handleDayNameChange = (dayIndex, newName) => {
     const newRutina = [...rutina];
     newRutina[dayIndex].nombre = newName;
     setRutina(newRutina);
   };
 
-  // Borrar un día entero
   const removeDay = (dayIndex, e) => {
-    e.stopPropagation(); // Evita que se dispare el click del tab al darle a la X
-    
-    // Validación: No permitir borrar si solo queda 1 día
+    e.stopPropagation(); 
     if (rutina.length <= 1) {
         alert("Debe existir al menos un día de entrenamiento.");
         return;
     }
-
     if (window.confirm("¿Estás seguro de eliminar este día y todos sus ejercicios?")) {
         const newRutina = rutina.filter((_, idx) => idx !== dayIndex);
         setRutina(newRutina);
-        
-        // Ajustar el tab activo para que no apunte a un índice que ya no existe
         if (activeDay >= newRutina.length) {
             setActiveDay(newRutina.length - 1);
         } else if (activeDay === dayIndex) {
@@ -68,8 +62,10 @@ const TrainingTab = ({ rutina, setRutina }) => {
   return (
     <div className="grid grid-cols-1 gap-6 animate-in fade-in zoom-in duration-300">
       
+      {/* --- BLOQUE 1: RUTINA DE FUERZA --- */}
+      
       {/* NAVEGACIÓN Y EDICIÓN DE DÍAS */}
-      <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+      <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto custom-scrollbar">
           <div className="flex gap-2">
               {rutina.map((dia, index) => (
                   <div
@@ -77,30 +73,24 @@ const TrainingTab = ({ rutina, setRutina }) => {
                       onClick={() => setActiveDay(index)}
                       className={`relative flex items-center px-4 py-2 text-sm font-bold rounded-lg transition-all whitespace-nowrap cursor-pointer group
                           ${activeDay === index 
-                          ? 'bg-amber-500 text-white shadow-md pr-8' // pr-8 da espacio para la X
+                          ? 'bg-amber-500 text-white shadow-md pr-8' 
                           : 'bg-transparent text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 dark:text-slate-400'}`}
                   >
-                      {/* Si está activo, es un input. Si no, es texto normal */}
                       {activeDay === index ? (
                           <input 
                               type="text" 
                               value={dia.nombre} 
                               onChange={(e) => handleDayNameChange(index, e.target.value)}
                               className="bg-transparent border-b border-amber-300 focus:border-white outline-none text-white font-bold w-32 placeholder-white/70 p-0"
-                              onClick={(e) => e.stopPropagation()} // Evita recargar el tab al escribir
+                              onClick={(e) => e.stopPropagation()} 
                               autoFocus
                           />
                       ) : (
                           <span>{dia.nombre}</span>
                       )}
 
-                      {/* Botón Borrar Día (Solo aparece en el día activo) */}
                       {activeDay === index && rutina.length > 1 && (
-                          <button 
-                              onClick={(e) => removeDay(index, e)} 
-                              className="absolute right-2 text-amber-200 hover:text-white hover:bg-amber-600 rounded p-0.5 transition-colors"
-                              title="Borrar Día"
-                          >
+                          <button onClick={(e) => removeDay(index, e)} className="absolute right-2 text-amber-200 hover:text-white hover:bg-amber-600 rounded p-0.5 transition-colors" title="Borrar Día">
                               <X size={16} />
                           </button>
                       )}
@@ -114,7 +104,7 @@ const TrainingTab = ({ rutina, setRutina }) => {
   
       {/* TABLA DE RUTINA */}
       <Card title={rutina[activeDay]?.nombre || "Entrenamiento"} icon={Dumbbell} className="border-t-4 border-t-amber-500">
-          <div className="overflow-x-auto min-h-[300px]">
+          <div className="overflow-x-auto min-h-[250px] custom-scrollbar pb-2">
               <table className="w-full text-sm text-left border-collapse">
                   <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200 dark:border-slate-700">
                       <tr>
@@ -161,6 +151,58 @@ const TrainingTab = ({ rutina, setRutina }) => {
               </button>
           </div>
       </Card>
+
+      {/* --- BLOQUE 2: CARDIO, NEAT Y NOTAS --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* Cardio y NEAT */}
+          <Card title="Cardio & Actividad Diaria (NEAT)" icon={HeartPulse} className="border-t-4 border-t-rose-500 h-full">
+              <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="md:col-span-2">
+                          <InputGroup label="Tipo de Cardio" name="cardio_tipo" value={patient.cardio_tipo} onChange={onChange} placeholder="Ej: Caminadora Zona 2, Bici..." />
+                      </div>
+                      <InputGroup label="Días x Sem" type="number" name="cardio_frecuencia" value={patient.cardio_frecuencia} onChange={onChange} placeholder="Ej: 3" />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-rose-50 dark:bg-rose-900/10 p-4 rounded-xl border border-rose-100 dark:border-rose-900/30">
+                          <label className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase mb-2 block">Duración (Sesión)</label>
+                          <div className="flex items-center gap-2">
+                              <Activity size={18} className="text-rose-400" />
+                              <input type="number" name="cardio_duracion" value={patient.cardio_duracion} onChange={onChange} className="w-full bg-transparent border-b border-rose-200 dark:border-rose-800 focus:border-rose-500 outline-none font-bold text-lg text-slate-700 dark:text-white" placeholder="0" />
+                              <span className="text-sm font-bold text-rose-400">min</span>
+                          </div>
+                      </div>
+
+                      <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                          <label className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase mb-2 block">Meta Pasos Diarios</label>
+                          <div className="flex items-center gap-2">
+                              <input type="number" name="pasos_diarios" value={patient.pasos_diarios} onChange={onChange} className="w-full bg-transparent border-b border-blue-200 dark:border-blue-800 focus:border-blue-500 outline-none font-bold text-lg text-slate-700 dark:text-white" placeholder="10000" />
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </Card>
+
+          {/* Notas y Enfoque */}
+          <Card title="Notas y Enfoque del Mes" icon={MessageSquare} className="border-t-4 border-t-sky-500 h-full">
+              <div className="h-full flex flex-col">
+                  <div className="bg-sky-50 dark:bg-sky-900/20 text-sky-800 dark:text-sky-300 p-3 rounded-lg text-xs mb-4 border border-sky-100 dark:border-sky-900/30">
+                      Usa este espacio para advertencias de lesiones, foco de hipertrofia o recordatorios de técnica.
+                  </div>
+                  {/* NOTA: Asegúrate de que tu FormComponents.jsx tenga exportado TextAreaGroup */}
+                  <textarea 
+                      name="notas_entrenamiento" 
+                      value={patient.notas_entrenamiento} 
+                      onChange={onChange} 
+                      placeholder="Ej: Cuidar técnica en peso muerto por molestia lumbar. Priorizar fase excéntrica en ejercicios de espalda..." 
+                      className="w-full flex-1 min-h-[120px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-sm rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block p-3 outline-none transition-all resize-none placeholder:text-slate-400"
+                  />
+              </div>
+          </Card>
+
+      </div>
     </div>
   );
 };

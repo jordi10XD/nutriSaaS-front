@@ -4,6 +4,8 @@ import {
     LogOut
 } from 'lucide-react';
 
+// NO importamos las vistas aquí. El sidebar solo cambia el estado 'activeView'.
+
 const NutriSidebar = ({
     isOpen,
     user,
@@ -20,14 +22,22 @@ const NutriSidebar = ({
             </div>
 
             {/* PERFIL */}
-            <div className="p-6 border-b border-slate-700/50">
+            <div 
+                onClick={() => setActiveView('settings')} // <--- Acción al clic
+                className="p-6 border-b border-slate-700/50 cursor-pointer group hover:bg-slate-800/50 transition-colors"
+                title="Ver Configuración de Cuenta"
+            >
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-white shadow-inner border-2 border-slate-500">
+                    <div className="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-white shadow-inner border-2 border-slate-500 group-hover:border-orange-500 transition-colors">
                         {user.nombre ? user.nombre[0] : 'U'}
                     </div>
                     <div className="overflow-hidden">
-                        <p className="text-white font-semibold truncate block">{user.nombre} {user.apellido}</p>
-                        <p className="text-xs text-orange-500 font-bold truncate">Nutricionista</p>
+                        <p className="text-white font-semibold truncate block group-hover:text-orange-400 transition-colors">
+                            {user.nombre} {user.apellido}
+                        </p>
+                        <p className="text-xs text-orange-500 font-bold truncate group-hover:text-orange-300">
+                            Ver mi cuenta
+                        </p>
                     </div>
                 </div>
             </div>
@@ -37,8 +47,8 @@ const NutriSidebar = ({
                 <div className="px-3 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider">Consultorio</div>
 
                 <NavButton
-                    active={activeView === 'dashboard'}
-                    onClick={() => setActiveView('dashboard')}
+                    active={activeView === 'resumen'} // CORREGIDO: minúscula
+                    onClick={() => setActiveView('resumen')} // CORREGIDO: minúscula
                     icon={LayoutDashboard}
                     label="Resumen"
                 />
@@ -72,7 +82,7 @@ const NutriSidebar = ({
     );
 };
 
-// Subcomponente interno para botones limpios
+// Subcomponente interno
 const NavButton = ({ active, onClick, icon: Icon, label }) => (
     <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors group ${active ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:bg-slate-700/50 hover:text-white'}`}>
         <Icon size={20} /> <span>{label}</span>

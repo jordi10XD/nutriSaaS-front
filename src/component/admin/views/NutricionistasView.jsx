@@ -28,7 +28,7 @@ const NutricionistasView = ({ empresa, token }) => {
   const fetchNutris = async () => {
     setLoading(true);
     try {
-      const res = await fetch('https://loving-nash.82-165-210-237.plesk.page/tenant/nutricionistas', {
+      const res = await fetch('http://127.0.0.1:8000/api/tenant/nutricionistas', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'X-Empresa-ID': empresa.id.toString(),
@@ -80,8 +80,8 @@ const NutricionistasView = ({ empresa, token }) => {
 
     const isEditing = !!editingNutri;
     const url = isEditing 
-        ? `https://loving-nash.82-165-210-237.plesk.page/tenant/nutricionistas/${editingNutri.id}`
-        : 'https://loving-nash.82-165-210-237.plesk.page/tenant/nutricionistas';
+        ? `http://127.0.0.1:8000/api/tenant/nutricionistas/${editingNutri.id}`
+        : 'http://127.0.0.1:8000/api/tenant/nutricionistas';
     const method = isEditing ? 'PUT' : 'POST';
 
     const payload = { 
@@ -125,7 +125,7 @@ const NutricionistasView = ({ empresa, token }) => {
       setIsDeleting(true);
 
       try {
-          const res = await fetch(`https://loving-nash.82-165-210-237.plesk.page/tenant/nutricionistas/${nutriToDelete.id}`, {
+          const res = await fetch(`http://127.0.0.1:8000/api/tenant/nutricionistas/${nutriToDelete.id}`, {
               method: 'DELETE',
               headers: {
                   'Authorization': `Bearer ${token}`,

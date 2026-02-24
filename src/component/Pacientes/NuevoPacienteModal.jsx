@@ -119,7 +119,7 @@ const NuevoPacienteModal = ({ isOpen, onClose, onSave, token, empresaId }) => {
     e.preventDefault();
     setLoading(true);
     try {
-        const res = await fetch('https://loving-nash.82-165-210-237.plesk.page/tenant/pacientes', {
+        const res = await fetch('http://127.0.0.1:8000/api/tenant/pacientes', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -18,12 +18,12 @@ const Login = ({ onLogin }) => { // Ya no necesitamos onAdminShortcut como prop
     useEffect(() => {
         const fetchEmpresas = async () => {
             try {
-                //const response = await fetch('https://loving-nash.82-165-210-237.plesk.page/empresas');
-                const response = await fetch('https://loving-nash.82-165-210-237.plesk.page/api/empresas');
+                //const response = await fetch('http://127.0.0.1:8000/api/empresas');
+                const response = await fetch('http://127.0.0.1:8000/api/empresas');
                 if (response.ok) {
                     const data = await response.json();
 
-                    const empresasFormateadas = data.map(emp => ({
+                    const empresasFormateadas = data.data.map(emp => ({
                         id: emp.id,
                         nombre: emp.nombre,
                         logo: emp.logo_url
@@ -68,7 +68,7 @@ const Login = ({ onLogin }) => { // Ya no necesitamos onAdminShortcut como prop
         const password = e.target.pass.value;
 
         try {
-            const response = await fetch('https://loving-nash.82-165-210-237.plesk.page/login/tenant', {
+            const response = await fetch('http://127.0.0.1:8000/api/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

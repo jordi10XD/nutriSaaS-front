@@ -56,6 +56,7 @@ const NutriDashboard = ({ user, onLogout, isDark, toggleTheme }) => {
                         {/* VISTA: RESUMEN  */}
                         {activeView === 'resumen' && (
                             <ResumenView
+                                user={user}
                                 onViewChange={setActiveView}
                                 onGoToPatient={handleGoToPatient}
                             />

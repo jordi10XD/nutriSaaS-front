@@ -1,7 +1,18 @@
 import React from 'react';
-import { Activity, Heart, Utensils, Clock, Apple, Brain, HeartPulse } from 'lucide-react';
+import { Activity, Heart, Utensils, Clock, Apple, Brain, HeartPulse, FileText, Users, AlertCircle } from 'lucide-react';
 import Card from '../ui/Card';
-import { InputGroup, CheckboxGroup } from '../ui/FormComponents';
+import { InputGroup, CheckboxGroup, TextAreaGroup } from '../ui/FormComponents';
+
+// Lista de Patologías para la sección final (APP/APF)
+const PATHOLOGIES = [
+    { id: 'diabetes', label: 'Diabetes', sub: 'Tipo 1, Mellitus, Gestacional' },
+    { id: 'hta', label: 'Hipertensión Arterial (HTA)', sub: 'Alta, Baja' },
+    { id: 'cardiacas', label: 'Enfermedades Cardiacas', sub: 'Insuficiencia, Arritmias, Infarto' },
+    { id: 'tiroideas', label: 'Enfermedades Tiroideas', sub: 'Hipo/Hipertiroidismo' },
+    { id: 'cancer', label: 'Cáncer', sub: 'Tipos diversos' },
+    { id: 'renales', label: 'Enfermedades Renales', sub: 'Insuficiencia, Cálculos, Infecciones' },
+    { id: 'hepaticas', label: 'Enf. Hepáticas / Biliares', sub: 'Cirrosis, Hígado graso, Cálculos' },
+];
 
 const HistoryTab = ({ patient, setPatient, onChange }) => {
   
@@ -20,10 +31,24 @@ const HistoryTab = ({ patient, setPatient, onChange }) => {
     }));
   };
 
+  // Manejador para la nueva sección de Patologías APP/APF
+  const handlePathologyChange = (pathId, field, value) => {
+      setPatient(prev => ({
+          ...prev,
+          historial_patologico: {
+              ...prev.historial_patologico,
+              [pathId]: {
+                  ...(prev.historial_patologico?.[pathId] || {}),
+                  [field]: value
+              }
+          }
+      }));
+  };
+
   return (
     <div className="grid grid-cols-1 gap-6 animate-in fade-in zoom-in duration-300">
       
-      {/* --- FILA 1: ESTILO DE VIDA Y CLÍNICA --- */}
+      {/* --- FILA 1: ESTILO DE VIDA Y CLÍNICA GENERAL --- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* TARJETA 1: ESTILO DE VIDA Y EMOCIONAL */}
@@ -39,7 +64,7 @@ const HistoryTab = ({ patient, setPatient, onChange }) => {
                     <InputGroup label="Calidad Sueño" name="calidad_sueno" value={patient.calidad_sueno} onChange={onChange} options={['Mala', 'Regular', 'Buena']} />
                 </div>
 
-                {/* NUEVO: Slider de Estrés */}
+                {/* Slider de Estrés */}
                 <div className="pt-2">
                     <div className="flex justify-between items-center mb-2">
                         <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1">
@@ -72,11 +97,10 @@ const HistoryTab = ({ patient, setPatient, onChange }) => {
         {/* TARJETA 2: SALUD, CLÍNICA Y DIGESTIVA */}
         <Card title="Salud, Clínica & Digestiva" icon={Heart}>
             <div className="space-y-5">
-                <InputGroup label="Patologías Diagnosticadas" type="textarea" name="patologias" value={patient.patologias} onChange={onChange} placeholder="Diabetes, HTA, SOP, Hipotiroidismo..." />
+                <InputGroup label="Patologías Diagnosticadas (Resumen)" type="textarea" name="patologias" value={patient.patologias} onChange={onChange} placeholder="Diabetes, HTA, SOP, Hipotiroidismo..." />
                 
                 <CheckboxGroup label="Sintomatología GI Actual" options={['Acidez', 'Reflujo', 'Gases', 'Distensión', 'Estreñimiento', 'Diarrea']} values={patient.sintomasGI || []} onChange={handleSintomasChange} />
                 
-                {/* NUEVO: Salud Digestiva Específica */}
                 <div className="grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-700 pt-4">
                     <InputGroup label="Frecuencia Evacuatoria" name="frecuencia_evacuatoria" value={patient.frecuencia_evacuatoria} onChange={onChange} placeholder="Ej: 1 vez al día" />
                     <InputGroup label="Escala Bristol" name="escala_bristol" value={patient.escala_bristol} onChange={onChange} options={['Tipo 1 (Duro)', 'Tipo 2', 'Tipo 3', 'Tipo 4 (Ideal)', 'Tipo 5', 'Tipo 6', 'Tipo 7 (Líquido)']} />
@@ -87,7 +111,7 @@ const HistoryTab = ({ patient, setPatient, onChange }) => {
                     <InputGroup label="Suplementación" name="suplementacion" value={patient.suplementacion} onChange={onChange} />
                 </div>
 
-                {/* NUEVO: Salud Femenina Condicional */}
+                {/* Salud Femenina Condicional */}
                 {patient.sexo?.toLowerCase() === 'mujer' && (
                     <div className="bg-pink-50 dark:bg-pink-900/10 p-4 rounded-xl border border-pink-100 dark:border-pink-900/30 mt-4">
                         <h4 className="text-pink-600 dark:text-pink-400 font-bold text-xs uppercase mb-3 flex items-center gap-2"><HeartPulse size={14}/> Salud Femenina</h4>
@@ -101,7 +125,7 @@ const HistoryTab = ({ patient, setPatient, onChange }) => {
         </Card>
       </div>
 
-      {/* --- FILA 2: HISTORIA ALIMENTARIA (NUEVO BLOQUE) --- */}
+      {/* --- FILA 2: HISTORIA ALIMENTARIA --- */}
       <Card title="Preferencias e Historia Alimentaria" icon={Apple} className="border-t-4 border-t-green-500">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -147,6 +171,99 @@ const HistoryTab = ({ patient, setPatient, onChange }) => {
             </table>
         </div>
       </Card>
+
+      {/* --- FILA 4: ANTECEDENTES PATOLÓGICOS DETALLADOS (NUEVO BLOQUE FINAL) --- */}
+      <Card title="Antecedentes Patológicos (APP / APF) - Detalle" icon={FileText} className="border-t-4 border-t-blue-500">
+          <div className="space-y-4">
+              {/* Header Visual */}
+              <div className="hidden md:flex text-xs uppercase font-bold text-slate-400 border-b border-slate-100 dark:border-slate-700 pb-2">
+                  <div className="w-1/3">Patología</div>
+                  <div className="w-1/3 pl-4">Antecedentes Personales (APP)</div>
+                  <div className="w-1/3 pl-4">Antecedentes Familiares (APF)</div>
+              </div>
+
+              {PATHOLOGIES.map((path) => {
+                  const data = patient.historial_patologico?.[path.id] || {};
+                  return (
+                      <div key={path.id} className="flex flex-col md:flex-row md:items-start gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 hover:border-teal-200 dark:hover:border-teal-900 transition-colors">
+                          
+                          {/* NOMBRE ENFERMEDAD */}
+                          <div className="md:w-1/3 pt-1">
+                              <h4 className="font-bold text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2">
+                                  <div className={`w-2 h-2 rounded-full ${data.app || data.apf ? 'bg-orange-500' : 'bg-slate-300'}`}></div>
+                                  {path.label}
+                              </h4>
+                              <p className="text-xs text-slate-400 mt-1 ml-4">{path.sub}</p>
+                          </div>
+
+                          {/* APP (PERSONAL) */}
+                          <div className="md:w-1/3 bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+                              <label className="flex items-center gap-2 cursor-pointer mb-2">
+                                  <input 
+                                      type="checkbox" 
+                                      checked={data.app || false}
+                                      onChange={(e) => handlePathologyChange(path.id, 'app', e.target.checked)}
+                                      className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 border-gray-300"
+                                  />
+                                  <span className={`text-xs font-bold ${data.app ? 'text-teal-600' : 'text-slate-500'}`}>
+                                      Sí, Diagnosticado
+                                  </span>
+                              </label>
+                              {data.app && (
+                                  <div className="animate-in slide-in-from-top-2 duration-200">
+                                      <input 
+                                          type="text" 
+                                          placeholder="Fecha Dx / Detalles..."
+                                          value={data.fecha_dx || ''}
+                                          onChange={(e) => handlePathologyChange(path.id, 'fecha_dx', e.target.value)}
+                                          className="w-full text-xs p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded outline-none focus:border-teal-500 dark:text-white"
+                                      />
+                                  </div>
+                              )}
+                          </div>
+
+                          {/* APF (FAMILIAR) */}
+                          <div className="md:w-1/3 bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+                              <label className="flex items-center gap-2 cursor-pointer mb-2">
+                                  <input 
+                                      type="checkbox" 
+                                      checked={data.apf || false}
+                                      onChange={(e) => handlePathologyChange(path.id, 'apf', e.target.checked)}
+                                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+                                  />
+                                  <span className={`text-xs font-bold flex items-center gap-1 ${data.apf ? 'text-blue-600' : 'text-slate-500'}`}>
+                                      <Users size={12}/> Antecedente Familiar
+                                  </span>
+                              </label>
+                              {data.apf && (
+                                  <div className="animate-in slide-in-from-top-2 duration-200">
+                                      <input 
+                                          type="text" 
+                                          placeholder="¿Quién? (Ej: Padre, Abuela)"
+                                          value={data.familiar || ''}
+                                          onChange={(e) => handlePathologyChange(path.id, 'familiar', e.target.value)}
+                                          className="w-full text-xs p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded outline-none focus:border-blue-500 dark:text-white"
+                                      />
+                                  </div>
+                              )}
+                          </div>
+                      </div>
+                  );
+              })}
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-700">
+              <TextAreaGroup 
+                  label="Hospitalizaciones Previas / Cirugías" 
+                  name="hospitalizaciones" 
+                  value={patient.hospitalizaciones} 
+                  onChange={onChange} 
+                  rows={2}
+                  placeholder="Detalles de intervenciones quirúrgicas o ingresos hospitalarios relevantes..." 
+              />
+          </div>
+      </Card>
+
     </div>
   );
 };

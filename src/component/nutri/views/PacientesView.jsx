@@ -48,7 +48,7 @@ const PacientesView = ({ user }) => {
         console.log(user.empresaConfig.id);
         setLoading(true);
         try {
-            const response = await fetch('https://loving-nash.82-165-210-237.plesk.page/tenant/pacientes', {
+            const response = await fetch('http://127.0.0.1:8000/api/tenant/pacientes', {
                 headers: {
                     'Authorization': `Bearer ${user.token}`,
                     'X-Empresa-ID': user.empresaConfig.id,

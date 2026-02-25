@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { 
   Calendar, Clock, ArrowRight, Video, MapPin, 
   PlusCircle, CheckCircle, XCircle, AlertCircle, X,
-  MoreHorizontal, ExternalLink // <--- Importamos ExternalLink
+  MoreHorizontal, ExternalLink 
 } from 'lucide-react';
 
 // --- SUBCOMPONENTE: ITEM DE CITA ---
-const AppointmentItem = ({ appointment, onClick }) => {
+const AppointmentItem = ({ appointment, onClick, onNameClick }) => {
   const { time, patient, type, status } = appointment;
 
   const statusColors = {
@@ -17,21 +17,30 @@ const AppointmentItem = ({ appointment, onClick }) => {
 
   return (
     <div 
-      onClick={onClick} // Ahora toda la fila abre el modal (más fácil de usar)
-      className="flex items-center gap-4 p-4 border-b border-slate-100 dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors cursor-pointer group"
+      onClick={onClick} 
+      className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 border-b border-slate-100 dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors cursor-pointer group"
     >
-      <div className="flex flex-col items-center min-w-[60px]">
-        <span className={`text-sm font-bold ${status === 'Cancelada' ? 'text-slate-400 line-through' : 'text-slate-800 dark:text-white'}`}>
+      <div className="flex flex-col items-center min-w-[50px] sm:min-w-[60px]">
+        <span className={`text-xs sm:text-sm font-bold ${status === 'Cancelada' ? 'text-slate-400 line-through' : 'text-slate-800 dark:text-white'}`}>
             {time}
         </span>
-        <span className="text-[10px] text-slate-400 uppercase">Hoy</span>
+        <span className="text-[9px] sm:text-[10px] text-slate-400 uppercase">Hoy</span>
       </div>
       
-      <div className="flex-1">
-        <h4 className={`text-sm font-bold transition-colors ${status === 'Cancelada' ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200 group-hover:text-teal-500'}`}>
+      <div className="flex-1 overflow-hidden"> {/* overflow-hidden para evitar desbordes de texto */}
+        <h4 
+            onClick={(e) => {
+                e.stopPropagation(); 
+                onNameClick();
+            }}
+            className={`text-sm font-bold transition-colors cursor-pointer hover:underline decoration-teal-500 underline-offset-2 truncate
+                ${status === 'Cancelada' ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200 hover:text-teal-600 dark:hover:text-teal-400'}`}
+            title="Ver Perfil del Paciente"
+        >
             {patient}
         </h4>
-        <div className="flex items-center gap-2 mt-1">
+
+        <div className="flex flex-wrap items-center gap-2 mt-1">
           <span className={`text-[10px] px-2 py-0.5 rounded flex items-center gap-1 font-bold border
             ${type === 'Online' 
               ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800' 
@@ -49,7 +58,7 @@ const AppointmentItem = ({ appointment, onClick }) => {
         </div>
       </div>
 
-      <button className="text-slate-300 hover:text-teal-600 dark:hover:text-teal-400">
+      <button onClick={onNameClick} className="text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 p-1">
         <ArrowRight size={18} />
       </button>
     </div>
@@ -95,30 +104,30 @@ const ResumenView = ({ onViewChange, onGoToPatient }) => {
   };
 
   return (
-    <div className="animate-in fade-in zoom-in duration-300 p-1 h-full flex flex-col relative">
+    <div className="animate-in fade-in zoom-in duration-300 flex flex-col relative pb-10">
       
       {/* HEADER */}
-      <div className="mb-6 flex justify-between items-end">
+      <div className="mb-6 flex flex-col sm:flex-row justify-between sm:items-end gap-2">
         <div>
-            <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Hola, Dra. Ana 👋</h1>
-            <p className="text-slate-500 dark:text-slate-400">Aquí está tu agenda operativa del día.</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white">Hola, Dra. Ana 👋</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Aquí está tu agenda operativa del día.</p>
         </div>
-        <p className="text-sm font-bold text-slate-400 dark:text-slate-500 hidden sm:block">
+        <p className="text-sm font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg self-start sm:self-auto">
             {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
         
-        {/* AGENDA */}
-        <div className="lg:col-span-2">
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden min-h-[500px]">
-            <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
-              <h3 className="font-bold text-lg text-slate-700 dark:text-white flex items-center gap-2">
+        {/* AGENDA - COLUMNA IZQUIERDA (2/3) */}
+        <div className="lg:col-span-2 order-2 lg:order-1">
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden min-h-[400px] sm:min-h-[500px]">
+            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+              <h3 className="font-bold text-base sm:text-lg text-slate-700 dark:text-white flex items-center gap-2">
                 <Clock size={20} className="text-teal-500" /> Agenda del Día
               </h3>
               <button onClick={() => onViewChange && onViewChange('agenda')} className="text-xs font-bold text-teal-600 hover:text-teal-700 dark:text-teal-400 hover:underline">
-                  Ver Calendario Completo
+                  Ver Calendario
               </button>
             </div>
             
@@ -127,15 +136,17 @@ const ResumenView = ({ onViewChange, onGoToPatient }) => {
                 <AppointmentItem 
                     key={app.id} 
                     appointment={app} 
-                    onClick={() => setSelectedAppt(app)} // Click general -> Abre Modal
+                    onClick={() => setSelectedAppt(app)} 
+                    onNameClick={() => handleProfileClick(app.patient)} 
                 />
               ))}
             </div>
           </div>
         </div>
 
-        {/* BARRA LATERAL DERECHA */}
-        <div className="space-y-6">
+        {/* BARRA LATERAL DERECHA (1/3) */}
+        <div className="space-y-6 order-1 lg:order-2">
+            
             {/* KPI Citas Hoy */}
             <div className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
                 <div className="relative z-10">
@@ -154,18 +165,18 @@ const ResumenView = ({ onViewChange, onGoToPatient }) => {
             {/* Accesos Rápidos */}
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
                 <h3 className="font-bold text-slate-700 dark:text-white text-sm mb-4">Acceso Rápido</h3>
-                <div className="space-y-3">
-                    <button onClick={() => onViewChange && onViewChange('pacientes')} className="w-full flex items-center gap-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 p-3 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-300 transition-colors border border-slate-100 dark:border-slate-700">
-                        <PlusCircle size={18} className="text-teal-500" /> Nuevo Paciente
+                <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
+                    <button onClick={() => onViewChange && onViewChange('pacientes')} className="w-full flex items-center justify-center lg:justify-start gap-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 p-3 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-300 transition-colors border border-slate-100 dark:border-slate-700">
+                        <PlusCircle size={18} className="text-teal-500" /> <span className="truncate">Nuevo Paciente</span>
                     </button>
-                    <button onClick={() => onViewChange && onViewChange('agenda')} className="w-full flex items-center gap-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 p-3 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-300 transition-colors border border-slate-100 dark:border-slate-700">
-                        <Calendar size={18} className="text-blue-500" /> Agendar Cita
+                    <button onClick={() => onViewChange && onViewChange('agenda')} className="w-full flex items-center justify-center lg:justify-start gap-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 p-3 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-300 transition-colors border border-slate-100 dark:border-slate-700">
+                        <Calendar size={18} className="text-blue-500" /> <span className="truncate">Agendar Cita</span>
                     </button>
                 </div>
             </div>
 
-            {/* Pacientes Recientes */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
+            {/* Pacientes Recientes (Oculto en móviles muy pequeños para no saturar, visible en sm+) */}
+            <div className="hidden sm:block bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="font-bold text-slate-700 dark:text-white text-sm">Pacientes Recientes</h3>
                     <button onClick={() => onViewChange && onViewChange('pacientes')} className="text-[10px] text-teal-600 hover:underline">Ver todos</button>
@@ -174,7 +185,7 @@ const ResumenView = ({ onViewChange, onGoToPatient }) => {
                     {recentPatients.map(p => (
                         <div 
                             key={p.id} 
-                            onClick={() => handleProfileClick(p.name)} // Clic para ir al perfil
+                            onClick={() => handleProfileClick(p.name)}
                             className="flex items-center justify-between p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg cursor-pointer transition-colors group"
                         >
                             <div className="flex items-center gap-3">
@@ -194,29 +205,25 @@ const ResumenView = ({ onViewChange, onGoToPatient }) => {
         </div>
       </div>
 
-      {/* --- MODAL DE GESTIÓN DE CITA (ACTUALIZADO) --- */}
+      {/* --- MODAL DE GESTIÓN DE CITA --- */}
       {selectedAppt && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md m-4 overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200 dark:border-slate-700">
                   
                   {/* Modal Header */}
-                  <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-start">
+                  <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-start">
                       <div>
                           <h3 className="text-lg font-bold text-slate-800 dark:text-white">Gestionar Cita</h3>
-                          
-                          {/* AQUI ESTA EL CAMBIO: LINK AL PERFIL */}
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
                               <span className="text-sm text-slate-500 dark:text-slate-400">Paciente:</span>
                               <button 
                                   onClick={() => {
                                       handleProfileClick(selectedAppt.patient);
-                                      setSelectedAppt(null); // Cerramos el modal al irnos
+                                      setSelectedAppt(null);
                                   }}
                                   className="flex items-center gap-1 font-bold text-teal-600 dark:text-teal-400 hover:underline hover:text-teal-700 transition-colors bg-teal-50 dark:bg-teal-900/30 px-2 py-0.5 rounded text-sm"
-                                  title="Ir al Expediente Clínico"
                               >
-                                  {selectedAppt.patient}
-                                  <ExternalLink size={12} />
+                                  {selectedAppt.patient} <ExternalLink size={12} />
                               </button>
                           </div>
                       </div>
@@ -225,12 +232,12 @@ const ResumenView = ({ onViewChange, onGoToPatient }) => {
                       </button>
                   </div>
 
-                  <div className="p-6 space-y-3">
+                  <div className="p-5 sm:p-6 space-y-3">
                       <p className="text-xs uppercase font-bold text-slate-400 mb-2">Cambiar estado a:</p>
                       
                       <button onClick={() => handleStatusChange('Finalizada')} className="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-green-50 hover:border-green-200 dark:hover:bg-green-900/20 dark:hover:border-green-800 group transition-all">
                           <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 text-green-600 flex items-center justify-center group-hover:scale-110 transition-transform"><CheckCircle size={18} /></div>
-                          <div className="text-left"><p className="font-bold text-slate-700 dark:text-slate-200 group-hover:text-green-700 dark:group-hover:text-green-400">Marcar como Finalizada</p><p className="text-xs text-slate-500">El paciente asistió.</p></div>
+                          <div className="text-left"><p className="font-bold text-slate-700 dark:text-slate-200 group-hover:text-green-700 dark:group-hover:text-green-400">Marcar como Finalizada</p><p className="text-xs text-slate-500">Consulta concluida.</p></div>
                       </button>
                       
                       <button onClick={() => handleStatusChange('Cancelada')} className="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-red-50 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:border-red-800 group transition-all">
@@ -243,7 +250,9 @@ const ResumenView = ({ onViewChange, onGoToPatient }) => {
                           <div className="text-left"><p className="font-bold text-slate-700 dark:text-slate-200 group-hover:text-orange-700 dark:group-hover:text-orange-400">Marcar como Pendiente</p><p className="text-xs text-slate-500">Restaurar estado.</p></div>
                       </button>
                   </div>
-                  <div className="p-4 bg-slate-50 dark:bg-slate-900/50 flex justify-end"><button onClick={() => setSelectedAppt(null)} className="px-4 py-2 text-sm font-bold text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors">Cerrar</button></div>
+                  <div className="p-4 bg-slate-50 dark:bg-slate-900/50 flex justify-end">
+                      <button onClick={() => setSelectedAppt(null)} className="px-4 py-2 text-sm font-bold text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors">Cerrar</button>
+                  </div>
               </div>
           </div>
       )}

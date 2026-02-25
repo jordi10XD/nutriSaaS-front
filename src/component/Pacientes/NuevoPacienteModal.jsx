@@ -4,10 +4,10 @@ import {
   Clock, Loader2, Brain, ChevronRight, ChevronLeft
 } from 'lucide-react';
 
-// --- COMPONENTES UI INTERNOS ESTILIZADOS ---
+// --- COMPONENTES UI INTERNOS ---
 
 const InputGroup = ({ label, name, value, onChange, type = "text", placeholder, options, suffix }) => (
-  <div className="flex flex-col">
+  <div className="flex flex-col w-full">
     <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">{label}</label>
     <div className="relative">
       {options ? (
@@ -15,7 +15,7 @@ const InputGroup = ({ label, name, value, onChange, type = "text", placeholder, 
           name={name}
           value={value}
           onChange={onChange}
-          className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-sm rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 block p-2.5 outline-none transition-all appearance-none"
+          className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-sm rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 block p-3 outline-none transition-all appearance-none"
         >
           <option value="">Seleccione...</option>
           {options.map((opt) => (
@@ -29,16 +29,14 @@ const InputGroup = ({ label, name, value, onChange, type = "text", placeholder, 
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          // 'dark:[&::-webkit-calendar-picker-indicator]:filter dark:[&::-webkit-calendar-picker-indicator]:invert'
-          // Invierte el color del icono (negro -> blanco) solo en modo oscuro.
           className={`w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 block outline-none transition-all placeholder:text-slate-400 
-            ${type === 'date' ? 'p-3 text-base' : 'p-2.5 text-sm'}
+            ${type === 'date' ? 'p-2.5' : 'p-2.5'}
             ${(type === 'date' || type === 'time') ? 'dark:[&::-webkit-calendar-picker-indicator]:filter dark:[&::-webkit-calendar-picker-indicator]:invert' : ''}
           `}
         />
       )}
       {suffix && (
-        <span className="absolute right-3 top-2.5 text-slate-400 text-xs font-bold pointer-events-none">
+        <span className="absolute right-3 top-3 text-slate-400 text-xs font-bold pointer-events-none">
           {suffix}
         </span>
       )}
@@ -47,7 +45,7 @@ const InputGroup = ({ label, name, value, onChange, type = "text", placeholder, 
 );
 
 const TextAreaGroup = ({ label, name, value, onChange, rows = 3, placeholder }) => (
-    <div className="flex flex-col">
+    <div className="flex flex-col w-full">
       <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">{label}</label>
       <textarea
         name={name}
@@ -55,7 +53,7 @@ const TextAreaGroup = ({ label, name, value, onChange, rows = 3, placeholder }) 
         onChange={onChange}
         rows={rows}
         placeholder={placeholder}
-        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-sm rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 block p-2.5 outline-none transition-all resize-none placeholder:text-slate-400"
+        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-sm rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 block p-3 outline-none transition-all resize-none placeholder:text-slate-400"
       />
     </div>
 );
@@ -66,13 +64,14 @@ const NuevoPacienteModal = ({ isOpen, onClose, onSave, token, empresaId }) => {
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    // 1. Demográfica
-    nombre_completo: '', cedula: '', estado_civil: '', tipo_consulta: 'Presencial',
+    // 1. Demográfica (ACTUALIZADO: Nombre separado)
+    nombre: '', apellido: '', cedula: '', estado_civil: '', tipo_consulta: 'Presencial',
     fecha_nacimiento: '', sexo_biologico: 'Mujer', ocupacion: '', pais_residencia: '',
     // 2. Informe
     motivo_consulta: '', expectativas: '', objetivos_clinicos: '',
-    // 3. Estilo de Vida
+    // 3. Estilo de Vida (ACTUALIZADO: Horarios fijos)
     dinamica_familiar: '', nivel_actividad: 'Sedentario', tipo_entrenamiento: '',
+    horarios_fijos_comida: '', detalle_horarios_comida: '', // Nuevos campos
     horas_sueno: '', calidad_sueno: 'Regular',
     ciclo_menstrual: '', anticonceptivos: '', fumador: false, alcohol: '',
     frecuencia_evacuatoria: '', escala_bristol: '',
@@ -118,8 +117,16 @@ const NuevoPacienteModal = ({ isOpen, onClose, onSave, token, empresaId }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    
+    // Preparar datos (Unir nombre si el backend lo requiere junto, o enviarlos separados)
+    // Asumiremos que el backend ahora acepta 'nombre' y 'apellido' o que unimos aquí
+    const payload = {
+        ...formData,
+        nombre_completo: `${formData.nombre} ${formData.apellido}`.trim() // Fallback por si el backend usa este campo
+    };
+
     try {
-        const res = await fetch('https://loving-nash.82-165-210-237.plesk.page/tenant/pacientes', {
+        const res = await fetch('http://127.0.0.1:8000/api/tenant/pacientes', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -127,7 +134,7 @@ const NuevoPacienteModal = ({ isOpen, onClose, onSave, token, empresaId }) => {
                 'Authorization': `Bearer ${token}`,
                 'X-Empresa-ID': empresaId
             },
-            body: JSON.stringify(formData)
+            body: JSON.stringify(payload)
         });
 
         const data = await res.json();
@@ -146,20 +153,23 @@ const NuevoPacienteModal = ({ isOpen, onClose, onSave, token, empresaId }) => {
     }
   };
 
-  // --- TABS CONFIG ---
   const tabs = [
     {id: 1, label: 'Datos', icon: User},
     {id: 2, label: 'Informe', icon: Brain},
     {id: 3, label: 'Estilo Vida', icon: Activity},
     {id: 4, label: 'Clínica', icon: HeartPulse},
-    {id: 5, label: 'Alimentación', icon: Utensils},
+    {id: 5, label: 'Alimentos', icon: Utensils},
     {id: 6, label: 'Recordatorio', icon: Clock},
     {id: 7, label: 'Acceso', icon: Save},
   ];
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-[#0f172a] w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-700">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-0 md:p-4 animate-in fade-in duration-200">
+      {/* RESPONSIVE UPDATE: 
+          h-full md:h-[90vh] -> Ocupa toda la pantalla en móvil, tarjeta en escritorio.
+          rounded-none md:rounded-2xl -> Cuadrado en móvil, bordes curvos en escritorio.
+      */}
+      <div className="bg-white dark:bg-[#0f172a] w-full max-w-5xl h-full md:h-[90vh] rounded-none md:rounded-2xl shadow-2xl flex flex-col overflow-hidden border-0 md:border border-slate-200 dark:border-slate-700">
         
         {/* HEADER */}
         <div className="bg-white dark:bg-[#0f172a] p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center shrink-0">
@@ -169,39 +179,43 @@ const NuevoPacienteModal = ({ isOpen, onClose, onSave, token, empresaId }) => {
                 </div>
                 <div>
                     <h2 className="text-lg font-bold text-slate-800 dark:text-white">Nuevo Paciente</h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Creación de expediente clínico</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Creación de expediente clínico</p>
                 </div>
             </div>
             <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full">
-                <X size={20}/>
+                <X size={24}/>
             </button>
         </div>
 
-        {/* TABS NAVEGACIÓN */}
+        {/* TABS NAVEGACIÓN (Scroll horizontal en móvil) */}
         <div className="flex bg-slate-50 dark:bg-[#0f172a] border-b border-slate-200 dark:border-slate-700 overflow-x-auto shrink-0 custom-scrollbar">
             {tabs.map(tab => (
                 <button 
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-6 py-4 text-sm font-bold transition-all whitespace-nowrap border-b-2 
+                    className={`flex items-center gap-2 px-4 md:px-6 py-3 md:py-4 text-sm font-bold transition-all whitespace-nowrap border-b-2 
                         ${activeTab === tab.id 
                             ? 'border-teal-500 text-teal-700 bg-white dark:bg-slate-900 dark:text-teal-400' 
                             : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'}`}
                 >
-                    <tab.icon size={16} /> {tab.label}
+                    <tab.icon size={16} /> 
+                    {/* En móviles muy pequeños, podrías ocultar el texto si quisieras, pero el scroll funciona bien */}
+                    <span>{tab.label}</span>
                 </button>
             ))}
         </div>
 
         {/* BODY (SCROLLABLE) */}
-        <div className="flex-1 p-8 overflow-y-auto bg-white dark:bg-[#0f172a] custom-scrollbar">
-            <form id="paciente-form" onSubmit={handleSubmit} className="max-w-5xl mx-auto">
+        <div className="flex-1 p-4 md:p-8 overflow-y-auto bg-white dark:bg-[#0f172a] custom-scrollbar">
+            <form id="paciente-form" onSubmit={handleSubmit} className="max-w-5xl mx-auto h-full">
                 
                 {/* 1. DATOS DEMOGRÁFICOS */}
                 {activeTab === 1 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in zoom-in duration-300">
-                        <InputGroup label="Nombre Completo" name="nombre_completo" value={formData.nombre_completo} onChange={handleChange} placeholder="Ej: Juan Pérez" />
-                        <InputGroup label="Documento (C.I. / DNI)" name="cedula" value={formData.cedula} onChange={handleChange} />
+                    /* RESPONSIVE: grid-cols-1 por defecto (móvil), sm:2, lg:3 */
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 animate-in fade-in zoom-in duration-300">
+                        <InputGroup label="Nombre" name="nombre" value={formData.nombre} onChange={handleChange} placeholder="Ej: Juan" />
+                        <InputGroup label="Apellido" name="apellido" value={formData.apellido} onChange={handleChange} placeholder="Ej: Pérez" />
+                        <InputGroup label="Cédula / DNI" name="cedula" value={formData.cedula} onChange={handleChange} />
                         <InputGroup label="Sexo Biológico" name="sexo_biologico" value={formData.sexo_biologico} onChange={handleChange} options={['Mujer', 'Hombre']} />
                         <InputGroup label="Fecha Nacimiento" type="date" name="fecha_nacimiento" value={formData.fecha_nacimiento} onChange={handleChange} />
                         <InputGroup label="Ocupación" name="ocupacion" value={formData.ocupacion} onChange={handleChange} />
@@ -213,9 +227,9 @@ const NuevoPacienteModal = ({ isOpen, onClose, onSave, token, empresaId }) => {
 
                 {/* 2. INFORME MOTIVACIONAL */}
                 {activeTab === 2 && (
-                    <div className="space-y-6 animate-in fade-in zoom-in duration-300">
+                    <div className="space-y-4 md:space-y-6 animate-in fade-in zoom-in duration-300">
                         <TextAreaGroup label="Motivo de Consulta" name="motivo_consulta" value={formData.motivo_consulta} onChange={handleChange} placeholder="¿Qué trae al paciente a consulta?" rows={2} />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                              <TextAreaGroup label="Expectativas del Paciente" name="expectativas" value={formData.expectativas} onChange={handleChange} />
                              <TextAreaGroup label="Objetivos Clínicos (Nutricionista)" name="objetivos_clinicos" value={formData.objetivos_clinicos} onChange={handleChange} />
                         </div>
@@ -224,14 +238,22 @@ const NuevoPacienteModal = ({ isOpen, onClose, onSave, token, empresaId }) => {
 
                 {/* 3. ESTILO DE VIDA */}
                 {activeTab === 3 && (
-                    <div className="space-y-6 animate-in fade-in zoom-in duration-300">
+                    <div className="space-y-4 md:space-y-6 animate-in fade-in zoom-in duration-300">
                         <InputGroup label="Dinámica Familiar / Logística" name="dinamica_familiar" value={formData.dinamica_familiar} onChange={handleChange} placeholder="¿Quién cocina? ¿Quién compra?" />
                         
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* NUEVO: Horarios Fijos */}
+                        <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-100 dark:border-slate-800">
+                            <h4 className="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase mb-3">Rutina Alimentaria</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <InputGroup label="¿Tiene horarios fijos de comida?" name="horarios_fijos_comida" value={formData.horarios_fijos_comida} onChange={handleChange} options={['Si', 'No', 'A veces']} />
+                                <TextAreaGroup label="¿Por qué? / Detalles" name="detalle_horarios_comida" value={formData.detalle_horarios_comida} onChange={handleChange} rows={1} placeholder="Ej: Turnos rotativos, falta de tiempo..." />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                             <InputGroup label="Nivel Actividad" name="nivel_actividad" value={formData.nivel_actividad} onChange={handleChange} options={['Sedentario', 'Ligero', 'Moderado', 'Intenso']} />
                             <InputGroup label="Tipo Entrenamiento" name="tipo_entrenamiento" value={formData.tipo_entrenamiento} onChange={handleChange} />
                             
-                            {/* Checkbox Estilizado */}
                             <div className="flex flex-col justify-end pb-3">
                                 <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                                     <input type="checkbox" name="fumador" checked={formData.fumador} onChange={handleChange} className="w-5 h-5 text-teal-600 rounded focus:ring-teal-500 border-gray-300" />
@@ -240,23 +262,23 @@ const NuevoPacienteModal = ({ isOpen, onClose, onSave, token, empresaId }) => {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                             <InputGroup label="Horas Sueño" type="number" name="horas_sueno" value={formData.horas_sueno} onChange={handleChange} suffix="h" />
                             <InputGroup label="Calidad Sueño" name="calidad_sueno" value={formData.calidad_sueno} onChange={handleChange} options={['Buena', 'Regular', 'Mala']} />
                             <InputGroup label="Consumo Alcohol" name="alcohol" value={formData.alcohol} onChange={handleChange} placeholder="Ej: Social, fines de semana" />
                         </div>
 
                         {formData.sexo_biologico === 'Mujer' && (
-                            <div className="bg-pink-50 dark:bg-pink-900/10 p-5 rounded-xl border border-pink-100 dark:border-pink-900/30">
+                            <div className="bg-pink-50 dark:bg-pink-900/10 p-4 md:p-5 rounded-xl border border-pink-100 dark:border-pink-900/30">
                                 <h4 className="text-pink-600 dark:text-pink-400 font-bold text-xs uppercase mb-3 flex items-center gap-2"><HeartPulse size={16}/> Salud Femenina</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                                     <InputGroup label="Ciclo Menstrual" name="ciclo_menstrual" value={formData.ciclo_menstrual} onChange={handleChange} placeholder="Regular, Menopausia..." />
                                     <InputGroup label="Anticonceptivos" name="anticonceptivos" value={formData.anticonceptivos} onChange={handleChange} />
                                 </div>
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                              <InputGroup label="Frecuencia Evacuatoria" name="frecuencia_evacuatoria" value={formData.frecuencia_evacuatoria} onChange={handleChange} />
                              <InputGroup label="Escala Bristol" name="escala_bristol" value={formData.escala_bristol} onChange={handleChange} placeholder="1-7" />
                         </div>
@@ -265,11 +287,11 @@ const NuevoPacienteModal = ({ isOpen, onClose, onSave, token, empresaId }) => {
 
                 {/* 4. CLÍNICA */}
                 {activeTab === 4 && (
-                    <div className="space-y-6 animate-in fade-in zoom-in duration-300">
+                    <div className="space-y-4 md:space-y-6 animate-in fade-in zoom-in duration-300">
                         <TextAreaGroup label="Patologías Diagnosticadas" name="patologias" value={formData.patologias} onChange={handleChange} placeholder="Diabetes, HTA, Dislipidemias..." />
                         <TextAreaGroup label="Antecedentes Familiares" name="antecedentes_familiares" value={formData.antecedentes_familiares} onChange={handleChange} />
                         <TextAreaGroup label="Sintomatología Gastrointestinal" name="sintomas_gastro" value={formData.sintomas_gastro} onChange={handleChange} placeholder="Acidez, Reflujo, Gases..." />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                             <InputGroup label="Medicación Actual" name="medicacion" value={formData.medicacion} onChange={handleChange} />
                             <InputGroup label="Suplementación" name="suplementacion" value={formData.suplementacion} onChange={handleChange} />
                         </div>
@@ -278,14 +300,14 @@ const NuevoPacienteModal = ({ isOpen, onClose, onSave, token, empresaId }) => {
 
                 {/* 5. ALIMENTARIA */}
                 {activeTab === 5 && (
-                    <div className="space-y-6 animate-in fade-in zoom-in duration-300">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4 md:space-y-6 animate-in fade-in zoom-in duration-300">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                             <TextAreaGroup label="Alimentos Favoritos" name="alimentos_favoritos" value={formData.alimentos_favoritos} onChange={handleChange} />
                             <TextAreaGroup label="Alimentos Rechazados" name="alimentos_rechazados" value={formData.alimentos_rechazados} onChange={handleChange} />
                         </div>
                         <InputGroup label="Alergias e Intolerancias" name="alergias" value={formData.alergias} onChange={handleChange} />
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                             <InputGroup label="Agua (Litros)" type="number" step="0.1" name="litros_agua" value={formData.litros_agua} onChange={handleChange} suffix="L" />
                             <InputGroup label="Picoteo / Ansiedad" name="picoteo_ansiedad" value={formData.picoteo_ansiedad} onChange={handleChange} />
                             <InputGroup label="Hora Levantarse" type="time" name="hora_levantarse" value={formData.hora_levantarse} onChange={handleChange} />
@@ -298,51 +320,54 @@ const NuevoPacienteModal = ({ isOpen, onClose, onSave, token, empresaId }) => {
                 {activeTab === 6 && (
                     <div className="animate-in fade-in zoom-in duration-300">
                         <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-900/30 text-orange-800 dark:text-orange-300 p-4 rounded-lg mb-6 text-sm flex items-center gap-2">
-                             <Utensils size={18} /> Registra los alimentos y horarios habituales del paciente para detectar patrones.
+                             <Utensils size={18} /> Registra los alimentos y horarios habituales del paciente.
                         </div>
                         <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
-                            <table className="w-full text-sm text-left">
-                                <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 uppercase font-bold text-xs border-b border-slate-200 dark:border-slate-700">
-                                    <tr>
-                                        <th className="px-6 py-4">Tiempo de Comida</th>
-                                        <th className="px-6 py-4 w-40">Hora</th>
-                                        <th className="px-6 py-4">Descripción de Alimentos y Cantidades</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700 bg-white dark:bg-[#0f172a]">
-                                    {Object.entries(formData.recordatorio_24h).map(([key, val]) => (
-                                        <tr key={key} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                                            <td className="px-6 py-3 font-bold text-slate-700 dark:text-slate-200 capitalize bg-slate-50/50 dark:bg-slate-800/50">
-                                                {key.replace(/([0-9])/g, ' $1')}
-                                            </td>
-                                            <td className="px-6 py-3">
-                                                <input 
-                                                    type="time" 
-                                                    value={val.hora} 
-                                                    onChange={(e)=>handleMatrixChange(key, 'hora', e.target.value)} 
-                                                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded px-2 py-2 focus:ring-2 focus:ring-teal-500 outline-none text-slate-600 dark:text-white dark:[&::-webkit-calendar-picker-indicator]:filter dark:[&::-webkit-calendar-picker-indicator]:invert"
-                                                />
-                                            </td>
-                                            <td className="px-6 py-3">
-                                                <input 
-                                                    type="text" 
-                                                    value={val.detalle} 
-                                                    onChange={(e)=>handleMatrixChange(key, 'detalle', e.target.value)} 
-                                                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded px-3 py-2 focus:ring-2 focus:ring-teal-500 outline-none text-slate-600 dark:text-white placeholder-slate-300 dark:placeholder-slate-600"
-                                                    placeholder="Ej: 2 tostadas integrales..."
-                                                />
-                                            </td>
+                            {/* Tabla Responsive: en móvil permite scroll horizontal interno */}
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm text-left min-w-[600px]">
+                                    <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 uppercase font-bold text-xs border-b border-slate-200 dark:border-slate-700">
+                                        <tr>
+                                            <th className="px-4 py-3 md:px-6 md:py-4">Tiempo</th>
+                                            <th className="px-4 py-3 md:px-6 md:py-4 w-32 md:w-40">Hora</th>
+                                            <th className="px-4 py-3 md:px-6 md:py-4">Descripción</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700 bg-white dark:bg-[#0f172a]">
+                                        {Object.entries(formData.recordatorio_24h).map(([key, val]) => (
+                                            <tr key={key} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                                                <td className="px-4 py-3 md:px-6 md:py-3 font-bold text-slate-700 dark:text-slate-200 capitalize bg-slate-50/50 dark:bg-slate-800/50">
+                                                    {key.replace(/([0-9])/g, ' $1')}
+                                                </td>
+                                                <td className="px-4 py-3 md:px-6 md:py-3">
+                                                    <input 
+                                                        type="time" 
+                                                        value={val.hora} 
+                                                        onChange={(e)=>handleMatrixChange(key, 'hora', e.target.value)} 
+                                                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded px-2 py-2 focus:ring-2 focus:ring-teal-500 outline-none text-slate-600 dark:text-white dark:[&::-webkit-calendar-picker-indicator]:filter dark:[&::-webkit-calendar-picker-indicator]:invert"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-3 md:px-6 md:py-3">
+                                                    <input 
+                                                        type="text" 
+                                                        value={val.detalle} 
+                                                        onChange={(e)=>handleMatrixChange(key, 'detalle', e.target.value)} 
+                                                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded px-3 py-2 focus:ring-2 focus:ring-teal-500 outline-none text-slate-600 dark:text-white placeholder-slate-300 dark:placeholder-slate-600"
+                                                        placeholder="Ej: 2 tostadas..."
+                                                    />
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 )}
 
                 {/* 7. ACCESO (LOGIN) */}
                 {activeTab === 7 && (
-                    <div className="max-w-md mx-auto animate-in fade-in zoom-in duration-300 bg-slate-50 dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <div className="max-w-md mx-auto animate-in fade-in zoom-in duration-300 bg-slate-50 dark:bg-slate-800 p-6 md:p-8 rounded-2xl border border-slate-200 dark:border-slate-700">
                         <div className="text-center mb-6">
                             <div className="w-14 h-14 bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Save size={28} />
@@ -360,29 +385,29 @@ const NuevoPacienteModal = ({ isOpen, onClose, onSave, token, empresaId }) => {
         </div>
 
         {/* FOOTER ACTIONS */}
-        <div className="p-4 bg-white dark:bg-[#0f172a] border-t border-slate-200 dark:border-slate-700 flex justify-between items-center shrink-0">
-            <div className="text-xs font-bold text-slate-400">
+        <div className="p-4 bg-white dark:bg-[#0f172a] border-t border-slate-200 dark:border-slate-700 flex flex-col-reverse sm:flex-row justify-between items-center shrink-0 gap-3">
+            <div className="text-xs font-bold text-slate-400 hidden sm:block">
                 Paso {activeTab} de 7
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 w-full sm:w-auto">
                 {/* Botón Atrás (Solo si no es paso 1) */}
                 {activeTab > 1 && (
                     <button 
                         onClick={() => setActiveTab(prev => prev - 1)}
-                        className="px-4 py-2.5 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1"
+                        className="flex-1 sm:flex-none px-4 py-2.5 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors flex justify-center items-center gap-1"
                     >
                         <ChevronLeft size={16} /> Atrás
                     </button>
                 )}
                 
-                <button onClick={onClose} className="px-6 py-2.5 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+                <button onClick={onClose} className="flex-1 sm:flex-none px-6 py-2.5 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-center">
                     Cancelar
                 </button>
 
                 {activeTab < 7 ? (
                     <button 
                         onClick={() => setActiveTab(prev => prev + 1)}
-                        className="px-6 py-2.5 bg-slate-800 dark:bg-white text-white dark:text-slate-900 rounded-lg font-bold hover:bg-slate-900 dark:hover:bg-slate-200 transition-all flex items-center gap-2"
+                        className="flex-1 sm:flex-none px-6 py-2.5 bg-slate-800 dark:bg-white text-white dark:text-slate-900 rounded-lg font-bold hover:bg-slate-900 dark:hover:bg-slate-200 transition-all flex justify-center items-center gap-2"
                     >
                         Siguiente <ChevronRight size={16} />
                     </button>
@@ -390,7 +415,7 @@ const NuevoPacienteModal = ({ isOpen, onClose, onSave, token, empresaId }) => {
                     <button 
                         onClick={handleSubmit} 
                         disabled={loading}
-                        className="px-8 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold transition-all shadow-lg shadow-teal-600/20 flex items-center gap-2 disabled:opacity-70"
+                        className="flex-1 sm:flex-none px-8 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold transition-all shadow-lg shadow-teal-600/20 flex justify-center items-center gap-2 disabled:opacity-70"
                     >
                         {loading && <Loader2 size={18} className="animate-spin" />} 
                         {loading ? 'Guardando...' : 'Finalizar y Guardar'}

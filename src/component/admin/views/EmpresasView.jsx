@@ -16,7 +16,7 @@ const EmpresasView = ({ onSelectEmpresa, token }) => {
   const loadEmpresas = async () => {
     setLoading(true);
     try {
-      const res = await fetch('https://loving-nash.82-165-210-237.plesk.page/empresas', {
+      const res = await fetch('http://127.0.0.1:8000/api/empresas', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -45,7 +45,7 @@ const EmpresasView = ({ onSelectEmpresa, token }) => {
     if (logo) formData.append('logo', logo);
 
     try {
-      const res = await fetch('https://loving-nash.82-165-210-237.plesk.page/empresas', {
+      const res = await fetch('http://127.0.0.1:8000/api/empresas', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }, // FormData no lleva Content-Type manual
         body: formData

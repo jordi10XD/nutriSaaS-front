@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 // Importa tus componentes originales
 import Login from './login'; // Asegúrate que la ruta sea correcta (a veces es ./auth/Login)
 import AdminDashboard from './AdminDashboard';
-import NutriDashboard from './component/nutri/NutriDashboard'; 
+import NutriDashboard from './component/nutri/NutriDashboard';
 
 // --- DATOS FALSOS (MOCKS) PARA PRUEBAS ---
 const MOCK_ADMIN = {
@@ -31,6 +31,7 @@ const MOCK_NUTRI = {
 };
 
 export default function App() {
+<<<<<<< HEAD
   // Iniciamos directamente con el Admin para no perder tiempo (o null si prefieres Login)
   const [user, setUser] = useState(MOCK_ADMIN); 
   const [isDark, setIsDark] = useState(true);
@@ -81,6 +82,72 @@ export default function App() {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
       <style>{`
+=======
+    const [user, setUser] = useState(null);
+    const [isDark, setIsDark] = useState(false);
+
+    // --- DARK MODE LOGIC ---
+    useEffect(() => {
+        document.documentElement.classList.add('dark');
+        setIsDark(true);
+
+        const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const updateTheme = (e) => {
+            // Listener opcional
+        };
+        darkModeQuery.addEventListener('change', updateTheme);
+        return () => darkModeQuery.removeEventListener('change', updateTheme);
+    }, []);
+
+    const toggleTheme = () => {
+        setIsDark(!isDark);
+        if (!isDark) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    };
+
+    // --- USER PERSISTENCE ---
+    useEffect(() => {
+        const savedUser = localStorage.getItem('nutrisaas_user');
+        if (savedUser) {
+            try {
+                const parsedUser = JSON.parse(savedUser);
+                if (parsedUser?.nombre) setUser(parsedUser);
+            } catch (e) {
+                localStorage.removeItem('nutrisaas_user');
+            }
+        }
+    }, []);
+
+    const handleLogin = (userData) => {
+        setUser(userData);
+        localStorage.setItem('nutrisaas_user', JSON.stringify(userData));
+    };
+
+    const handleLogout = () => {
+        setUser(null);
+        localStorage.removeItem('nutrisaas_user');
+    };
+
+    const handleAdminShortcut = () => {
+        handleLogin({
+            id: 99,
+            nombre: 'Administrador',
+            apellido: 'SaaS',
+            rol: 'super_admin',
+            token: 'admin-token',
+            empresa: 'System'
+        });
+    };
+
+    // Estilos globales
+    const GlobalStyles = () => (
+        <>
+            <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+            <style>{`
+>>>>>>> 6964c4df5d2cf054c8ef04d13c1ad17af93b18e1
         body { font-family: 'Nunito', sans-serif; }
         h1, h2, h3, .brand-font { font-family: 'Quicksand', sans-serif; }
         /* Animaciones para el fondo */
@@ -93,6 +160,7 @@ export default function App() {
         .animate-blob { animation: blob 7s infinite; }
         .animation-delay-2000 { animation-delay: 2s; }
       `}</style>
+<<<<<<< HEAD
     </>
   );
 
@@ -137,6 +205,45 @@ export default function App() {
       
       {/* 1. Renderizamos la app normal */}
       {renderDashboard()}
+=======
+        </>
+    );
+
+    // --- RENDERIZADO CONDICIONAL ---
+    const renderDashboard = () => {
+        if (!user) return <Login onLogin={handleLogin} onAdminShortcut={handleAdminShortcut} />;
+
+        // Si es Nutricionista, mostramos su Dashboard
+        if (user.rol === 'nutricionista') {
+            return (
+                <NutriDashboard
+                    user={user}
+                    onLogout={handleLogout}
+                    isDark={isDark}
+                    toggleTheme={toggleTheme}
+                />
+            );
+        }
+
+        // Por defecto (Super Admin o Admin Empresa) mostramos AdminDashboard
+        return (
+            <AdminDashboard
+                user={user}
+                onLogout={handleLogout}
+                isDark={isDark}
+                toggleTheme={toggleTheme}
+            />
+        );
+    };
+
+    return (
+        <>
+            <GlobalStyles />
+            {renderDashboard()}
+        </>
+    );
+}
+>>>>>>> 6964c4df5d2cf054c8ef04d13c1ad17af93b18e1
 
       {/* 2. Inyectamos tu control remoto personal */}
       <DevToolbar />

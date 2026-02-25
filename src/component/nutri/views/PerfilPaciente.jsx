@@ -24,7 +24,19 @@ const PerfilPaciente = ({ patientData, onBack }) => {
     
     // Informe Clínico
     motivo: '', expectativas: '', objetivosClinicos: '',
-    
+
+    // Antecedentes Patológicos (con estructura detallada)
+    historial_patologico: {
+        diabetes: { app: false, fecha_dx: '', apf: false, familiar: '' },
+        hta: { app: false, fecha_dx: '', apf: false, familiar: '' },
+        cardiacas: { app: false, fecha_dx: '', apf: false, familiar: '' },
+        tiroideas: { app: false, fecha_dx: '', apf: false, familiar: '' },
+        cancer: { app: false, fecha_dx: '', apf: false, familiar: '' },
+        renales: { app: false, fecha_dx: '', apf: false, familiar: '' },
+        hepaticas: { app: false, fecha_dx: '', apf: false, familiar: '' },
+    },
+    hospitalizaciones: '', 
+
     // Estilo de Vida
     nivel_actividad: 'Sedentario', tipo_entrenamiento: '', horas_sueno: '', calidad_sueno: 'Regular', 
     nivel_estres: '5', picoteo_ansiedad: '', fumador: false, alcohol: '',

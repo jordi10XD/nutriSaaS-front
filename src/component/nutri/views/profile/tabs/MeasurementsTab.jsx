@@ -1,11 +1,19 @@
-import React, { useMemo } from 'react';
-import { Scale, Activity, ClipboardList, TrendingUp, PlusCircle, Trash2, Scissors, BarChart2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { 
+    Scale, Activity, ClipboardList, TrendingUp, 
+    PlusCircle, Trash2, Scissors, BarChart2, 
+    TestTube, Plus, X 
+} from 'lucide-react';
 import Card from '../ui/Card';
 import { InputGroup } from '../ui/FormComponents';
 
-const MeasurementsTab = ({ patient, onChange, evaluaciones, setEvaluaciones }) => {
+const MeasurementsTab = ({ patient, setPatient, onChange, evaluaciones, setEvaluaciones }) => {
   
-  // --- CÁLCULO DE IMC ---
+  // --- 1. ESTADO PARA PARÁMETROS DINÁMICOS ---
+  const [isBioModalOpen, setIsBioModalOpen] = useState(false);
+  const [newMarker, setNewMarker] = useState({ label: '', unit: '' });
+
+  // --- 2. CÁLCULO DE IMC ---
   const imcData = useMemo(() => {
     if (!patient.peso || !patient.altura) return { value: '--', status: '', color: 'text-slate-400', bg: 'bg-slate-100' };
     const alturaM = parseFloat(patient.altura) / 100;
@@ -21,7 +29,7 @@ const MeasurementsTab = ({ patient, onChange, evaluaciones, setEvaluaciones }) =
     return { value: val, status, color, bg };
   }, [patient.peso, patient.altura]);
 
-  // --- LÓGICA DEL HISTÓRICO ---
+  // --- 3. LÓGICA DEL HISTÓRICO ---
   const handleEvalChange = (id, field, value) => {
       setEvaluaciones(evaluaciones.map(ev => ev.id === id ? { ...ev, [field]: value } : ev));
   };
@@ -44,9 +52,8 @@ const MeasurementsTab = ({ patient, onChange, evaluaciones, setEvaluaciones }) =
       }
   };
 
-  // --- LÓGICA DEL GRÁFICO DE LÍNEA SVG (NUEVO) ---
+  // --- 4. LÓGICA DEL GRÁFICO DE LÍNEA SVG ---
   const chartData = useMemo(() => {
-    // 1. Filtramos solo las evaluaciones que tienen peso válido
     const validData = evaluaciones
         .filter(ev => ev.peso && !isNaN(ev.peso) && Number(ev.peso) > 0)
         .map((ev, index) => ({ 
@@ -56,38 +63,49 @@ const MeasurementsTab = ({ patient, onChange, evaluaciones, setEvaluaciones }) =
             label: ev.fecha ? ev.fecha.substring(5).replace('-', '/') : `E${index+1}`
         }));
 
-    if (validData.length < 2) return null; // Necesitamos al menos 2 puntos para una línea
+    if (validData.length < 2) return null;
 
-    // 2. Constantes para el dibujo SVG
     const HEIGHT = 150;
-    const WIDTH = 500; // Ancho interno virtual del SVG
-    const PADDING_Y = 20; // Espacio arriba y abajo
+    const WIDTH = 500;
+    const PADDING_Y = 20;
 
-    // 3. Cálculos de escala Y (Peso)
     const weights = validData.map(d => d.peso);
-    const minWeight = Math.min(...weights) - 1; // Un poco de aire abajo
-    const maxWeight = Math.max(...weights) + 1; // Un poco de aire arriba
+    const minWeight = Math.min(...weights) - 1;
+    const maxWeight = Math.max(...weights) + 1;
     const weightRange = maxWeight - minWeight || 1;
 
-    // Función para convertir peso a coordenada Y (invertido porque SVG Y=0 es arriba)
     const getY = (weight) => {
         const relativePos = (weight - minWeight) / weightRange;
         return HEIGHT - PADDING_Y - (relativePos * (HEIGHT - (PADDING_Y * 2)));
     };
 
-    // 4. Generar puntos de coordenadas (X,Y)
     const points = validData.map((d, i) => {
         const x = (i / (validData.length - 1)) * WIDTH;
         const y = getY(d.peso);
         return { ...d, x, y };
     });
 
-    // 5. Crear el string del path SVG (M=Move to, L=Line to)
     const pathD = `M ${points.map(p => `${p.x},${p.y}`).join(' L ')}`;
-
     return { points, pathD, HEIGHT, WIDTH, minWeight, maxWeight };
   }, [evaluaciones]);
 
+  // --- 5. LÓGICA DEL GENERADOR DE BIOMARCADORES ---
+  const handleAddCustomMarker = (e) => {
+      e.preventDefault();
+      if (!newMarker.label) return;
+
+      const markerId = 'bio_' + newMarker.label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_');
+      const currentCustomMarkers = patient.custom_bio_markers || [];
+      
+      setPatient(prev => ({
+          ...prev,
+          custom_bio_markers: [...currentCustomMarkers, { id: markerId, label: newMarker.label, unit: newMarker.unit }],
+          [markerId]: ''
+      }));
+      
+      setNewMarker({ label: '', unit: '' });
+      setIsBioModalOpen(false);
+  };
 
   const metricsList = [
       { key: 'peso', label: 'Peso (kg)' },
@@ -101,10 +119,11 @@ const MeasurementsTab = ({ patient, onChange, evaluaciones, setEvaluaciones }) =
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-6 animate-in fade-in zoom-in duration-300">
+    <div className="grid grid-cols-1 gap-6 animate-in fade-in zoom-in duration-300 pb-10">
         
         {/* --- FILA 1: DATOS FÍSICOS --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* 1. Antropometría General */}
             <Card title="Antropometría y Complexión" icon={Scale}>
                 <div className="mb-5 bg-slate-50 dark:bg-slate-800 p-4 rounded-lg flex items-center justify-between border border-slate-100 dark:border-slate-700">
                     <div><p className="text-xs font-bold text-slate-500 uppercase">IMC Calculado</p><p className={`text-3xl font-bold ${imcData.color}`}>{imcData.value}</p></div>
@@ -125,58 +144,111 @@ const MeasurementsTab = ({ patient, onChange, evaluaciones, setEvaluaciones }) =
                     </div>
                 </div>
             </Card>
+
+            {/* 2. Composición Corporal (ACTUALIZADA) */}
             <Card title="Composición Corporal" icon={Activity}>
                 <div className="space-y-6">
-                    <div><h5 className="text-xs font-bold text-teal-600 uppercase mb-3">Bioimpedancia</h5><div className="grid grid-cols-2 gap-4"><InputGroup label="% Grasa" type="number" name="masaGrasa" value={patient.masaGrasa} onChange={onChange} suffix="%" /><InputGroup label="Masa Muscular" type="number" name="masaMuscular" value={patient.masaMuscular} onChange={onChange} suffix="kg" /><InputGroup label="Grasa Visceral" type="number" name="grasaVisceral" value={patient.grasaVisceral} onChange={onChange} suffix="niv" /><InputGroup label="Edad Metab." type="number" name="edadMetabolica" value={patient.edadMetabolica} onChange={onChange} suffix="años" /></div></div>
-                    <div className="border-t border-slate-100 dark:border-slate-700 pt-4"><h5 className="text-xs font-bold text-teal-600 uppercase mb-3">Perímetros Rápidos</h5><div className="grid grid-cols-2 gap-4"><InputGroup label="Brazo (R)" type="number" name="brazoR" value={patient.brazoR} onChange={onChange} suffix="cm" /><InputGroup label="Brazo (C)" type="number" name="brazoC" value={patient.brazoC} onChange={onChange} suffix="cm" /></div><div className="mt-4 w-1/2 pr-2"><InputGroup label="Pantorrilla" type="number" name="pantorrilla" value={patient.pantorrilla} onChange={onChange} suffix="cm" /></div></div>
+                    <div>
+                        <h5 className="text-xs font-bold text-teal-600 uppercase mb-3">Análisis de Masas (Bioimpedancia)</h5>
+                        <div className="grid grid-cols-2 gap-4">
+                            <InputGroup label="% Masa Grasa" type="number" step="0.1" name="masaGrasa" value={patient.masaGrasa} onChange={onChange} suffix="%" />
+                            <InputGroup label="% M. Musculo Esq." type="number" step="0.1" name="masaMuscular" value={patient.masaMuscular} onChange={onChange} suffix="%" />
+                            <InputGroup label="Masa Ósea" type="number" step="0.1" name="masaOsea" value={patient.masaOsea} onChange={onChange} suffix="kg" />
+                            <InputGroup label="% Agua Corporal" type="number" step="0.1" name="aguaCorporal" value={patient.aguaCorporal} onChange={onChange} suffix="%" />
+                            <InputGroup label="% Grasa Subcutánea" type="number" step="0.1" name="grasaSubcutanea" value={patient.grasaSubcutanea} onChange={onChange} suffix="%" />
+                            <InputGroup label="Grasa Visceral" type="number" step="0.1" name="grasaVisceral" value={patient.grasaVisceral} onChange={onChange} suffix="niv" />
+                        </div>
+                    </div>
+                    <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
+                        <h5 className="text-xs font-bold text-teal-600 uppercase mb-3">Perímetros Rápidos</h5>
+                        <div className="grid grid-cols-2 gap-4">
+                            <InputGroup label="Brazo (R)" type="number" name="brazoR" value={patient.brazoR} onChange={onChange} suffix="cm" />
+                            <InputGroup label="Brazo (C)" type="number" name="brazoC" value={patient.brazoC} onChange={onChange} suffix="cm" />
+                            <InputGroup label="Pantorrilla" type="number" name="pantorrilla" value={patient.pantorrilla} onChange={onChange} suffix="cm" />
+                        </div>
+                    </div>
                 </div>
             </Card>
+
+            {/* 3. Pliegues (ISAK) */}
             <Card title="Pliegues Cutáneos (ISAK)" icon={Scissors}>
                 <div className="grid grid-cols-2 gap-4"><InputGroup label="Tricipital" type="number" name="pliegue_tricipital" value={patient.pliegue_tricipital} onChange={onChange} suffix="mm" /><InputGroup label="Bicipital" type="number" name="pliegue_bicipital" value={patient.pliegue_bicipital} onChange={onChange} suffix="mm" /><InputGroup label="Subescapular" type="number" name="pliegue_subescapular" value={patient.pliegue_subescapular} onChange={onChange} suffix="mm" /><InputGroup label="Supraespinal" type="number" name="pliegue_supraespinal" value={patient.pliegue_supraespinal} onChange={onChange} suffix="mm" /><InputGroup label="Abdominal" type="number" name="pliegue_abdominal" value={patient.pliegue_abdominal} onChange={onChange} suffix="mm" /><InputGroup label="Muslo Frontal" type="number" name="pliegue_muslo" value={patient.pliegue_muslo} onChange={onChange} suffix="mm" /><div className="col-span-2 md:w-1/2 pr-2"><InputGroup label="Pantorrilla" type="number" name="pliegue_pantorrilla" value={patient.pliegue_pantorrilla} onChange={onChange} suffix="mm" /></div></div>
             </Card>
         </div>
 
-        {/* --- FILA 2: BIOQUÍMICA Y GRÁFICO DE LÍNEA (NUEVO) --- */}
+        {/* --- FILA 2: BIOQUÍMICA (NUEVA) Y GRÁFICO (MANTENIDO) --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card title="Bioquímica & Signos" icon={ClipboardList}>
-                <div className="space-y-6"><InputGroup label="Presión Arterial" name="presionArterial" value={patient.presionArterial} onChange={onChange} placeholder="120/80" /><div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-100 dark:border-slate-700"><h5 className="text-xs font-bold text-slate-500 uppercase mb-3">Perfil Metabólico</h5><div className="grid grid-cols-2 gap-4"><InputGroup label="Glucemia" name="glucemia" value={patient.glucemia} onChange={onChange} suffix="mg" /><InputGroup label="HbA1c" name="hba1c" value={patient.hba1c} onChange={onChange} suffix="%" /></div></div><div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-100 dark:border-slate-700"><h5 className="text-xs font-bold text-slate-500 uppercase mb-3">Perfil Lipídico</h5><div className="grid grid-cols-2 gap-4"><InputGroup label="Col. Total" name="colesterol" value={patient.colesterol} onChange={onChange} /><InputGroup label="Triglic." name="trigliceridos" value={patient.trigliceridos} onChange={onChange} /></div></div></div>
+            
+            {/* Bioquímica Dinámica */}
+            <Card title="Bioquímica & Signos Clínicos" icon={TestTube}>
+                <div className="space-y-6">
+                    <InputGroup label="Presión Arterial" name="presionArterial" value={patient.presionArterial} onChange={onChange} placeholder="120/80" />
+                    
+                    <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
+                        <h5 className="text-xs font-bold text-teal-600 uppercase mb-3">Panel Sanguíneo Base</h5>
+                        <div className="grid grid-cols-2 gap-4">
+                            <InputGroup label="Hemoglobina" name="hemoglobina" value={patient.hemoglobina} onChange={onChange} suffix="g/dL" />
+                            <InputGroup label="Glucosa" name="glucosa" value={patient.glucosa} onChange={onChange} suffix="mg/dL" />
+                            <InputGroup label="Colesterol Total" name="colesterol" value={patient.colesterol} onChange={onChange} suffix="mg/dL" />
+                            <InputGroup label="Triglicéridos" name="trigliceridos" value={patient.trigliceridos} onChange={onChange} suffix="mg/dL" />
+                            <InputGroup label="Creatinina" name="creatinina" value={patient.creatinina} onChange={onChange} suffix="mg/dL" />
+                        </div>
+                    </div>
+
+                    {/* ZONA DE PARÁMETROS DINÁMICOS */}
+                    {(patient.custom_bio_markers && patient.custom_bio_markers.length > 0) && (
+                        <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
+                            <h4 className="text-[10px] font-bold text-orange-500 uppercase mb-3 flex items-center gap-1">
+                                Marcadores Personalizados
+                            </h4>
+                            <div className="grid grid-cols-2 gap-4">
+                                {patient.custom_bio_markers.map(marker => (
+                                    <InputGroup 
+                                        key={marker.id} 
+                                        label={marker.label} 
+                                        name={marker.id} 
+                                        value={patient[marker.id] || ''} 
+                                        onChange={onChange} 
+                                        suffix={marker.unit} 
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* BOTÓN AÑADIR PARÁMETRO */}
+                    <button 
+                        onClick={() => setIsBioModalOpen(true)}
+                        className="w-full mt-2 py-2 border-2 border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 font-bold text-xs rounded-lg hover:border-teal-500 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all flex items-center justify-center gap-2"
+                    >
+                        <Plus size={14} /> Añadir parámetro extra
+                    </button>
+                </div>
             </Card>
 
-            {/* NUEVO: Gráfico de Línea SVG */}
+            {/* Gráfico de Línea SVG (Mantenido intacto) */}
             <div className="lg:col-span-2">
                 <Card title="Tendencia de Peso Corporal" icon={TrendingUp} className="h-full">
-                    <div className="flex flex-col h-full min-h-[250px] justify-center pt-6 pb-2 px-4">
+                    <div className="flex flex-col h-full min-h-[300px] justify-center pt-6 pb-2 px-4">
                         {chartData ? (
                             <div className="relative w-full h-full">
-                                {/* Ejes y Líneas Guía */}
                                 <div className="absolute inset-0 flex flex-col justify-between text-[10px] text-slate-400 font-mono pointer-events-none z-0 pb-6 pl-6">
                                     <div className="border-b border-slate-200 dark:border-slate-700 w-full h-0 flex items-center"><span>{Math.round(chartData.maxWeight)}kg</span></div>
                                     <div className="border-b border-slate-100 dark:border-slate-800 w-full h-0"></div>
                                     <div className="border-b border-slate-200 dark:border-slate-700 w-full h-0 flex items-center"><span>{Math.round(chartData.minWeight)}kg</span></div>
                                 </div>
-
-                                {/* SVG del Gráfico */}
                                 <svg viewBox={`0 0 ${chartData.WIDTH} ${chartData.HEIGHT}`} className="w-full h-full overflow-visible z-10 relative pl-6 pb-6">
-                                    {/* La línea de tendencia */}
                                     <path d={chartData.pathD} fill="none" stroke="currentColor" strokeWidth="3" className="text-teal-500 dark:text-teal-400 transition-all duration-500 ease-in-out" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
-                                    
-                                    {/* Puntos Interactivos */}
                                     {chartData.points.map((p, i) => (
                                         <g key={p.id} className="group cursor-pointer">
-                                            {/* Círculo del punto */}
                                             <circle cx={p.x} cy={p.y} r="5" className="fill-white dark:fill-slate-800 stroke-teal-600 dark:stroke-teal-400 stroke-2 transition-all group-hover:r-7 group-hover:fill-teal-100" vectorEffect="non-scaling-stroke"/>
-                                            
-                                            {/* Tooltip Flotante (Solo visible en hover) */}
                                             <foreignObject x={p.x - 40} y={p.y - 55} width="80" height="50" className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                                                 <div xmlns="http://www.w3.org/1999/xhtml" className="flex flex-col items-center justify-center bg-slate-800 text-white text-xs rounded-lg py-1 shadow-lg">
                                                     <span className="font-bold">{p.peso} kg</span>
                                                     <span className="text-[10px] text-slate-300">{p.label}</span>
                                                 </div>
-                                                {/* Triangulito del tooltip */}
                                                 <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-slate-800 mx-auto mt-[-1px]"></div>
                                             </foreignObject>
-
-                                            {/* Etiqueta Eje X (Fecha) */}
                                             <text x={p.x} y={chartData.HEIGHT + 20} textAnchor="middle" className="text-[10px] fill-slate-400 font-mono">{p.label}</text>
                                         </g>
                                     ))}
@@ -194,7 +266,7 @@ const MeasurementsTab = ({ patient, onChange, evaluaciones, setEvaluaciones }) =
             </div>
         </div>
 
-        {/* --- FILA 3: TABLA MATRIZ HISTÓRICA (Igual que antes) --- */}
+        {/* --- FILA 3: TABLA MATRIZ HISTÓRICA --- */}
         <Card title="Matriz Histórica de Perímetros" icon={TrendingUp} className="border-t-4 border-t-teal-500">
             <div className="bg-teal-50 dark:bg-teal-900/20 text-teal-800 dark:text-teal-300 p-3 rounded-lg text-sm mb-4 border border-teal-100 dark:border-teal-900/30">
                 Registra la evolución del paciente. Los datos de 'Peso' ingresados aquí se reflejarán en el gráfico de tendencia superior.
@@ -237,6 +309,47 @@ const MeasurementsTab = ({ patient, onChange, evaluaciones, setEvaluaciones }) =
                 </table>
             </div>
         </Card>
+
+        {/* --- MODAL PARA AÑADIR BIOMARCADOR --- */}
+        {isBioModalOpen && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200 dark:border-slate-700">
+                    <form onSubmit={handleAddCustomMarker}>
+                        <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+                            <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                                <TestTube size={18} className="text-teal-500"/> Nuevo Biomarcador
+                            </h3>
+                            <button type="button" onClick={() => setIsBioModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <div className="p-5 space-y-4">
+                            <div className="flex flex-col">
+                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Nombre del parámetro</label>
+                                <input 
+                                    required autoFocus type="text" placeholder="Ej: Ácido Úrico, Hierro, Vitamina D..."
+                                    value={newMarker.label} onChange={(e) => setNewMarker({...newMarker, label: e.target.value})}
+                                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm outline-none focus:border-teal-500 dark:text-white"
+                                />
+                            </div>
+                            <div className="flex flex-col">
+                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Unidad de medida (Opcional)</label>
+                                <input 
+                                    type="text" placeholder="Ej: mg/dL, ng/mL, UI/L..."
+                                    value={newMarker.unit} onChange={(e) => setNewMarker({...newMarker, unit: e.target.value})}
+                                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm outline-none focus:border-teal-500 dark:text-white"
+                                />
+                            </div>
+                        </div>
+                        <div className="p-4 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-2">
+                            <button type="button" onClick={() => setIsBioModalOpen(false)} className="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">Cancelar</button>
+                            <button type="submit" className="px-4 py-2 text-sm font-bold bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-md">Agregar al perfil</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        )}
+
     </div>
   );
 };

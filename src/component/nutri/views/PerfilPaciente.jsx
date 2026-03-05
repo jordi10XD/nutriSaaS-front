@@ -47,25 +47,25 @@ const PerfilPaciente = ({ patientData, onBack }) => {
     ciclo_menstrual: '', anticonceptivos: '', // Salud femenina
 
     // Historia Alimentaria
-    alimentos_favoritos: '', alimentos_rechazados: '', alergias: '', litros_agua: '',
+    alimentos_favoritos: '', alimentos_rechazados: '', alergias: '', intolerancias: '', litros_agua: '',
 
-    // Mediciones Actuales
-    peso: '70', altura: '170', cintura: '', cadera: '',
-    somatotipo: 'Mesomorfo', 
-    masaGrasa: '', masaMuscular: '', grasaVisceral: '', edadMetabolica: '',
+// --- Mediciones y Composición Corporal ---
+    peso: '70', altura: '170', cintura: '', cadera: '', somatotipo: 'Mesomorfo', 
+    masaGrasa: '', masaMuscular: '', masaOsea: '', aguaCorporal: '', grasaSubcutanea: '', grasaVisceral: '', 
     brazoR: '', brazoC: '', pantorrilla: '',
     
     // Pliegues ISAK
     pliegue_tricipital: '', pliegue_bicipital: '', pliegue_subescapular: '', 
     pliegue_supraespinal: '', pliegue_abdominal: '', pliegue_muslo: '', pliegue_pantorrilla: '',
     
-    // Bioquímica
-    presionArterial: '', glucemia: '', hba1c: '', colesterol: '', trigliceridos: '',
-
+    // --- Bioquímica ---
+    presionArterial: '', hemoglobina: '', glucosa: '', colesterol: '', trigliceridos: '', creatinina: '',
+    
     // Planificación Nutricional
     pesoObjetivo: '65', formulaTMB: 'mifflin', factorActividad: '1.2', ajusteCalorico: '-300',
     macroProt: '25', macroGrasa: '30', macroCarbo: '45',
     distribucion_comidas: { desayuno: 25, colacion1: 10, almuerzo: 35, colacion2: 10, cena: 20 },
+    ml_agua_kg: 35,
     suplementos_prescritos: [], // Array de objetos {id, nombre, dosis, momento}
 
     // Entrenamiento (General)
@@ -185,7 +185,7 @@ const PerfilPaciente = ({ patientData, onBack }) => {
       <div className="flex-1 overflow-y-auto pb-10 pr-2 custom-scrollbar">
          {activeTab === 'general' && <GeneralTab patient={patient} setPatient={setPatient} onChange={handleChange} />}
          {activeTab === 'history' && <HistoryTab patient={patient} setPatient={setPatient} onChange={handleChange} />}
-         {activeTab === 'measurements' && <MeasurementsTab patient={patient} onChange={handleChange} evaluaciones={evaluaciones} setEvaluaciones={setEvaluaciones} />}
+         {activeTab === 'measurements' && <MeasurementsTab patient={patient} onChange={handleChange} setPatient={setPatient} evaluaciones={evaluaciones} setEvaluaciones={setEvaluaciones} />}
          {activeTab === 'planning' && <PlanningTab patient={patient} setPatient={setPatient} onChange={handleChange} />}
          {activeTab === 'training' && <TrainingTab rutina={rutina} setRutina={setRutina} patient={patient} onChange={handleChange} />}
       </div>

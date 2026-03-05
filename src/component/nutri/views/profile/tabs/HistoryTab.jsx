@@ -125,19 +125,46 @@ const HistoryTab = ({ patient, setPatient, onChange }) => {
         </Card>
       </div>
 
-      {/* --- FILA 2: HISTORIA ALIMENTARIA --- */}
+      {/* --- FILA 2: HISTORIA ALIMENTARIA (ACTUALIZADA: ALERGIAS E INTOLERANCIAS SEPARADAS) --- */}
       <Card title="Preferencias e Historia Alimentaria" icon={Apple} className="border-t-4 border-t-green-500">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              
+              {/* Bloque Izquierdo: Gustos (Ocupa 7 columnas en LG) */}
+              <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-6">
                   <InputGroup label="Alimentos Favoritos" type="textarea" name="alimentos_favoritos" value={patient.alimentos_favoritos} onChange={onChange} placeholder="Alimentos que el paciente disfruta mucho..." />
-                  <InputGroup label="Alimentos Rechazados" type="textarea" name="alimentos_rechazados" value={patient.alimentos_rechazados} onChange={onChange} placeholder="Alimentos que no le gustan o no tolera..." />
+                  <InputGroup label="Alimentos Rechazados" type="textarea" name="alimentos_rechazados" value={patient.alimentos_rechazados} onChange={onChange} placeholder="Alimentos que no le gustan..." />
               </div>
-              <div className="space-y-4">
-                  <InputGroup label="Alergias e Intolerancias" name="alergias" value={patient.alergias} onChange={onChange} placeholder="Ej: Celíaco, Intolerante a lactosa..." />
+              
+              {/* Bloque Derecho: Restricciones y Agua (Ocupa 5 columnas en LG) */}
+              <div className="lg:col-span-5 space-y-4">
+                  {/* Cuadro de Alergias */}
+                  <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-xl border border-red-100 dark:border-red-900/30">
+                      <InputGroup 
+                          label="Alergias (Reacción Inmunológica)" 
+                          name="alergias" 
+                          value={patient.alergias} 
+                          onChange={onChange} 
+                          placeholder="Ej: Maní, Mariscos, Soya..." 
+                      />
+                  </div>
+
+                  {/* Cuadro de Intolerancias */}
+                  <div className="bg-yellow-50 dark:bg-yellow-900/10 p-4 rounded-xl border border-yellow-100 dark:border-yellow-900/30">
+                      <InputGroup 
+                          label="Intolerancias (Reacción Digestiva)" 
+                          name="intolerancias" 
+                          value={patient.intolerancias} 
+                          onChange={onChange} 
+                          placeholder="Ej: Lactosa, Fructosa, FODMAPs..." 
+                      />
+                  </div>
+
+                  {/* Consumo de Agua */}
                   <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30">
                       <InputGroup label="Consumo Diario de Agua" type="number" step="0.1" name="litros_agua" value={patient.litros_agua} onChange={onChange} suffix="Litros" />
                   </div>
               </div>
+
           </div>
       </Card>
 
@@ -172,7 +199,7 @@ const HistoryTab = ({ patient, setPatient, onChange }) => {
         </div>
       </Card>
 
-      {/* --- FILA 4: ANTECEDENTES PATOLÓGICOS DETALLADOS (NUEVO BLOQUE FINAL) --- */}
+      {/* --- FILA 4: ANTECEDENTES PATOLÓGICOS DETALLADOS --- */}
       <Card title="Antecedentes Patológicos (APP / APF) - Detalle" icon={FileText} className="border-t-4 border-t-blue-500">
           <div className="space-y-4">
               {/* Header Visual */}

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { TrendingUp, Calculator, Utensils, Droplet, PieChart, Pill, PlusCircle, Trash2 } from 'lucide-react';
+import { TrendingUp, Calculator, Utensils, Droplet, PieChart, Pill, PlusCircle, Trash2, Edit3 } from 'lucide-react';
 import Card from '../ui/Card';
 import { InputGroup } from '../ui/FormComponents';
 
@@ -12,11 +12,15 @@ const PlanningTab = ({ patient, setPatient, onChange }) => {
     const edad = parseFloat(patient.edad) || 30; 
     const sexo = patient.sexo?.toLowerCase();
     if (!peso || !altura) return 0;
+    
+    // Fórmula Mifflin-St Jeor base
     let base = (10 * peso) + (6.25 * altura) - (5 * edad);
+    // Ajuste por sexo integrado
     return sexo === 'hombre' ? base + 5 : base - 161;
   }, [patient.peso, patient.altura, patient.edad, patient.sexo]);
 
-  const get = useMemo(() => Math.round(tmb * parseFloat(patient.factorActividad || 1.2)), [tmb, patient.factorActividad]);
+  const factorActividadNum = parseFloat(patient.factorActividad || 1.2);
+  const get = useMemo(() => Math.round(tmb * factorActividadNum), [tmb, factorActividadNum]);
   const caloriasObjetivo = useMemo(() => get + parseInt(patient.ajusteCalorico || 0), [get, patient.ajusteCalorico]);
 
   // --- CÁLCULO DE MACROS (g/kg) ---
@@ -74,8 +78,12 @@ const PlanningTab = ({ patient, setPatient, onChange }) => {
       return Object.values(dist).reduce((acc, curr) => acc + (parseInt(curr) || 0), 0);
   }, [patient.distribucion_comidas]);
 
+  // Constantes para el Select de Actividad (para saber si el valor es predefinido o personalizado)
+  const PRESET_PALS = ['1.2', '1.375', '1.55', '1.725', '1.9'];
+  const isCustomPal = !PRESET_PALS.includes(String(patient.factorActividad || '1.2'));
+
   return (
-    <div className="grid grid-cols-1 gap-6 animate-in fade-in zoom-in duration-300">
+    <div className="grid grid-cols-1 gap-6 animate-in fade-in zoom-in duration-300 pb-10">
         
         {/* --- FILA 1: DIAGNÓSTICO Y GASTO --- */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -108,8 +116,43 @@ const PlanningTab = ({ patient, setPatient, onChange }) => {
                             <div className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 font-mono text-center py-2.5 rounded-lg border border-gray-200 dark:border-slate-700">{Math.round(tmb)}</div>
                         </div>
                     </div>
-                    <InputGroup label="Nivel de Actividad (PAL)" name="factorActividad" value={patient.factorActividad} onChange={onChange} options={[{value: 1.2, label: 'Sedentario (1.2)'}, {value: 1.375, label: 'Ligero (1.375)'}, {value: 1.55, label: 'Moderado (1.55)'}, {value: 1.725, label: 'Activo (1.725)'}, {value: 1.9, label: 'Muy Activo (1.9)'}]} />
-                    <div className="bg-teal-50 dark:bg-teal-900/20 p-4 rounded-lg flex justify-between items-center border border-teal-100 dark:border-teal-800/50">
+
+                    {/* NUEVO: SELECTOR + INPUT EDITABLE PARA PAL */}
+                    <div>
+                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5 block">Nivel de Actividad (PAL)</label>
+                        <div className="flex gap-3">
+                            <select 
+                                name="factorActividad"
+                                value={isCustomPal ? 'custom' : (patient.factorActividad || '1.2')}
+                                onChange={(e) => {
+                                    if (e.target.value !== 'custom') onChange(e); // Si selecciona un preset, actualiza el valor
+                                }}
+                                className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-sm rounded-lg focus:ring-2 focus:ring-teal-500 outline-none p-2.5"
+                            >
+                                <option value="1.2">Sedentario</option>
+                                <option value="1.375">Ligero</option>
+                                <option value="1.55">Moderado</option>
+                                <option value="1.725">Activo</option>
+                                <option value="1.9">Muy Activo</option>
+                                {isCustomPal && <option value="custom">Personalizado...</option>}
+                            </select>
+                            
+                            <div className="relative w-24">
+                                <Edit3 size={14} className="absolute left-2.5 top-3 text-slate-400 pointer-events-none" />
+                                <input 
+                                    type="number" 
+                                    step="0.01" 
+                                    name="factorActividad" 
+                                    value={patient.factorActividad || '1.2'} 
+                                    onChange={onChange}
+                                    className="w-full pl-8 pr-2 py-2.5 bg-white dark:bg-slate-800 border border-teal-200 dark:border-teal-900 text-teal-700 dark:text-teal-400 font-bold text-sm rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-all shadow-sm"
+                                    title="Puedes editar el valor manualmente"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-teal-50 dark:bg-teal-900/20 p-4 rounded-lg flex justify-between items-center border border-teal-100 dark:border-teal-800/50 mt-2">
                         <span className="text-teal-800 dark:text-teal-300 font-bold text-sm">Gasto Energético Total (GET)</span>
                         <span className="text-xl font-bold text-teal-700 dark:text-teal-400">{get} kcal</span>
                     </div>
@@ -139,7 +182,6 @@ const PlanningTab = ({ patient, setPatient, onChange }) => {
                         <div className="flex justify-between text-xs mb-1 text-slate-600 dark:text-slate-300">
                             <span className="font-bold">Proteínas ({patient.macroProt}%)</span>
                             <span className="flex gap-2">
-                                {/* NUEVO: Indicador g/kg */}
                                 <span className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-1.5 rounded font-bold">
                                     {macros.prot.gkg} g/kg
                                 </span>
@@ -209,14 +251,42 @@ const PlanningTab = ({ patient, setPatient, onChange }) => {
 
                 <Card title="Requerimientos Específicos">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
-                            <div><div className="text-xs font-bold text-slate-500 uppercase">Meta Agua</div><div className="text-xs text-slate-400">35ml x Kg</div></div>
-                            <div className="text-lg font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1"><Droplet size={16} /> {((pesoActual * 35) / 1000).toFixed(1)} L</div>
+                        
+                        {/* NUEVO: REQUERIMIENTO DE AGUA EDITABLE */}
+                        <div className="flex flex-col justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
+                            <div className="flex justify-between w-full mb-3">
+                                <div className="text-xs font-bold text-slate-500 uppercase">Meta Agua</div>
+                                <Droplet size={16} className="text-blue-500" />
+                            </div>
+                            <div className="flex justify-between items-end w-full">
+                                <div className="flex items-center gap-1 text-xs text-slate-500">
+                                    {/* Input Editable para cambiar el multiplicador (ej 35ml) */}
+                                    <input 
+                                        type="number" 
+                                        name="ml_agua_kg" 
+                                        value={patient.ml_agua_kg || 35} 
+                                        onChange={onChange}
+                                        className="w-10 bg-transparent border-b border-slate-300 dark:border-slate-600 focus:border-blue-500 outline-none text-center font-bold text-slate-700 dark:text-slate-300 p-0"
+                                        title="Editar mililitros por Kg"
+                                    /> 
+                                    ml x Kg
+                                </div>
+                                <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                                    {((pesoActual * (patient.ml_agua_kg || 35)) / 1000).toFixed(1)} L
+                                </div>
+                            </div>
                         </div>
-                        <div className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
-                            <div><div className="text-xs font-bold text-slate-500 uppercase">Meta Fibra</div><div className="text-xs text-slate-400">Estándar</div></div>
-                            <div className="text-lg font-bold text-green-600 dark:text-green-400">25 - 30 g</div>
+
+                        <div className="flex flex-col justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
+                            <div className="flex justify-between w-full mb-3">
+                                <div className="text-xs font-bold text-slate-500 uppercase">Meta Fibra</div>
+                            </div>
+                            <div className="flex justify-between items-end w-full">
+                                <div className="text-xs text-slate-500">Estándar</div>
+                                <div className="text-lg font-bold text-green-600 dark:text-green-400">25 - 30 g</div>
+                            </div>
                         </div>
+                        
                     </div>
                 </Card>
             </div>

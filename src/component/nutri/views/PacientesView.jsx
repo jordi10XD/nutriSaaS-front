@@ -17,7 +17,6 @@ const PacientesView = ({ user }) => {
     // Este objeto tiene la estructura necesaria para que PerfilPaciente no falle
     const pacienteEjemplo = {
         id: 'static-1',
-        nombre_completo: 'Juan Pérez (Ejemplo)', // Para la lista
         nombre: 'Juan Pérez', // Para el perfil
         cedula: '1712345678',
         sexo: 'hombre', // Minúsculas para coincidir con selects
